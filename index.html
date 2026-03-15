@@ -1,0 +1,1988 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Civilization</title>
+<style>
+/*
+  DESIGN PHILOSOPHY
+  -----------------
+  Absolute minimum. Every line of CSS earns its place.
+  No decorations. No gradients. No glow. No blur.
+  Just structure, space, and data.
+
+  Font stack: Consolas → system monospace (no network)
+  Color: one background, one accent, grey scale for text
+*/
+
+:root {
+  --bg:     #07090f;
+  --s1:     #0c1018;
+  --s2:     #101520;
+  --s3:     #151c28;
+
+  --b:      rgba(255,255,255,0.07);
+  --b2:     rgba(255,255,255,0.12);
+
+  --c:      #18c8c0;          /* single accent */
+  --cg:     rgba(24,200,192,0.07);
+
+  --gold:   #b88a28;
+  --green:  #28a868;
+  --red:    #c04040;
+  --orange: #b87030;
+  --purple: #7858c8;
+  --blue:   #3878d8;
+
+  --t0: #ccd8e8;
+  --t1: #5878a0;
+  --t2: #2e4060;
+
+  --f: 'Consolas', 'Menlo', 'SF Mono', 'Cascadia Code', monospace;
+  --r: 2px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; }
+
+body {
+  background: var(--bg);
+  color: var(--t0);
+  font-family: var(--f);
+  font-size: 11px;
+  line-height: 1.5;
+  display: flex;
+  flex-direction: column;
+  -webkit-font-smoothing: antialiased;
+}
+
+* { scrollbar-width: thin; scrollbar-color: var(--b2) transparent; }
+
+/* ─── HEADER ─── */
+#hdr {
+  height: 42px;
+  background: var(--s1);
+  border-bottom: 1px solid var(--b);
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+#logo {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  color: var(--c);
+  text-transform: uppercase;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+#hdr-stats {
+  display: flex;
+  gap: 2px;
+  flex: 1;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.hs {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  padding: 2px 8px;
+  border: 1px solid var(--b);
+  border-radius: var(--r);
+  cursor: default;
+  white-space: nowrap;
+  transition: border-color .15s;
+}
+.hs:hover { border-color: var(--b2); }
+.hs-l { font-size: 8px; color: var(--t2); letter-spacing: 1.5px; text-transform: uppercase; }
+.hs b  { font-size: 11px; font-weight: 700; color: var(--c); }
+
+#era-badge {
+  font-size: 8.5px;
+  font-weight: 700;
+  color: var(--gold);
+  padding: 3px 10px;
+  border: 1px solid rgba(184,138,40,0.2);
+  border-radius: var(--r);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+#hdr-btns { display: flex; gap: 5px; flex-shrink: 0; }
+
+button {
+  background: transparent;
+  border: 1px solid var(--b2);
+  color: var(--t1);
+  padding: 4px 12px;
+  font-family: var(--f);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: pointer;
+  border-radius: var(--r);
+  transition: all .12s;
+  white-space: nowrap;
+}
+button:hover  { border-color: var(--c); color: var(--c); background: var(--cg); }
+button.on     { border-color: var(--c); color: var(--c); background: var(--cg); }
+button.red    { border-color: rgba(192,64,64,.2); color: var(--red); }
+button.red:hover { border-color: var(--red); }
+button:active { opacity: .7; }
+
+/* ─── TICKER ─── */
+#ticker {
+  height: 24px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--b);
+  flex-shrink: 0;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+#tickerInner {
+  font-size: 9px;
+  color: var(--t1);
+  white-space: nowrap;
+  padding: 0 20px;
+  animation: ticker 90s linear infinite;
+  letter-spacing: .3px;
+}
+@keyframes ticker { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+#ticker::before,
+#ticker::after {
+  content: '';
+  position: absolute;
+  top: 0; bottom: 0; width: 40px;
+  pointer-events: none; z-index: 1;
+}
+#ticker::before { left:  0; background: linear-gradient(to right,  var(--bg), transparent); }
+#ticker::after  { right: 0; background: linear-gradient(to left, var(--bg), transparent); }
+
+/* ─── TIMELINE ─── */
+#timeline {
+  height: 32px;
+  background: var(--s1);
+  border-bottom: 1px solid var(--b);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 18px 6px;
+}
+#timelineBar { display: flex; align-items: center; width: 100%; }
+.tl-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  border: 1px solid var(--b2);
+  background: var(--s2);
+  flex-shrink: 0;
+  position: relative;
+  cursor: default;
+  transition: all .3s;
+}
+.tl-label {
+  position: absolute;
+  top: 11px; left: 50%;
+  transform: translateX(-50%);
+  font-size: 6.5px;
+  color: var(--t2);
+  white-space: nowrap;
+  letter-spacing: .3px;
+  pointer-events: none;
+}
+.tl-done { border-color: var(--t1); background: var(--s3); }
+.tl-done .tl-label { color: var(--t1); }
+.tl-active {
+  border-color: var(--c);
+  background: var(--c);
+}
+.tl-active .tl-label { color: var(--c); }
+.tl-line { flex: 1; height: 1px; background: var(--b); min-width: 6px; }
+.tl-done + .tl-line { background: var(--t2); }
+
+/* ─── QUICK STATS ─── */
+#qstats {
+  height: 30px;
+  display: flex;
+  border-bottom: 1px solid var(--b);
+  flex-shrink: 0;
+}
+.qs {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-right: 1px solid var(--b);
+  cursor: default;
+  gap: 0;
+  transition: background .12s;
+}
+.qs:last-child { border-right: none; }
+.qs:hover { background: var(--s1); }
+.qs-l { font-size: 6.5px; color: var(--t2); letter-spacing: 1.5px; text-transform: uppercase; }
+.qs-v { font-size: 11px; font-weight: 700; color: var(--t0); }
+
+/* ─── LAYOUT ─── */
+#main { display: flex; flex: 1; min-height: 0; overflow: hidden; }
+
+#left  { width: 210px; background: var(--s1); border-right: 1px solid var(--b); display: flex; flex-direction: column; overflow: hidden; flex-shrink: 0; }
+#right { width: 268px; background: var(--s1); border-left:  1px solid var(--b); display: flex; flex-direction: column; overflow: hidden; flex-shrink: 0; }
+
+.blk { padding: 12px 14px; border-bottom: 1px solid var(--b); flex-shrink: 0; }
+.blk-title { font-size: 7.5px; font-weight: 700; letter-spacing: 2.5px; text-transform: uppercase; color: var(--t2); margin-bottom: 9px; }
+
+.scrollable { flex: 1; overflow-y: auto; min-height: 0; }
+
+/* ─── CANVAS ─── */
+#canvas-wrap {
+  flex: 1;
+  background: #020408;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+canvas { image-rendering: pixelated; display: block; cursor: crosshair; }
+
+#pauseOverlay {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+  font-size: 10px; font-weight: 700; letter-spacing: 6px;
+  color: var(--c); text-transform: uppercase;
+  display: none; pointer-events: none;
+  background: rgba(7,9,15,.95);
+  padding: 12px 28px;
+  border: 1px solid var(--b2);
+  border-radius: var(--r);
+}
+#eraOverlay {
+  position: absolute; top: 18px; left: 50%;
+  transform: translateX(-50%);
+  font-size: 10px; font-weight: 700; letter-spacing: 4px;
+  color: var(--gold); text-transform: uppercase;
+  display: none; pointer-events: none;
+  background: rgba(7,9,15,.97);
+  padding: 9px 22px;
+  border: 1px solid rgba(184,138,40,.2);
+  border-radius: var(--r);
+  animation: erafade .4s ease;
+}
+@keyframes erafade { from{opacity:0;transform:translateX(-50%) translateY(-6px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
+
+#tooltip {
+  position: absolute;
+  background: rgba(7,9,15,.97);
+  border: 1px solid var(--b2);
+  padding: 8px 11px;
+  font-size: 10px;
+  line-height: 1.65;
+  pointer-events: none;
+  z-index: 100;
+  border-radius: var(--r);
+  display: none;
+  max-width: 205px;
+  color: var(--t1);
+}
+#tooltip b { color: var(--t0); }
+
+#kb {
+  position: absolute; bottom: 9px; left: 10px;
+  font-size: 8px; color: var(--t2);
+  pointer-events: none;
+  display: flex; gap: 8px; align-items: center;
+}
+.kk {
+  border: 1px solid var(--b2);
+  border-radius: 2px;
+  padding: 1px 5px;
+  color: var(--t1);
+  font-size: 8px;
+}
+
+/* ─── SLIDERS ─── */
+.sl { display: flex; align-items: center; gap: 9px; margin-top: 5px; }
+.sl label { flex: 1; color: var(--t1); font-size: 10px; }
+.sl span  { color: var(--c); font-size: 10px; min-width: 28px; text-align: right; }
+input[type=range] {
+  flex: 1; height: 2px; cursor: pointer; accent-color: var(--c);
+  -webkit-appearance: none; appearance: none; background: var(--s3); border-radius: 1px; outline: none;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 10px; height: 10px; border-radius: 50%;
+  background: var(--c); cursor: pointer;
+  transition: transform .12s;
+}
+input[type=range]:hover::-webkit-slider-thumb { transform: scale(1.25); }
+
+/* ─── SEASON ─── */
+.seas-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+#seasName     { font-size: 10px; font-weight: 700; color: var(--c); letter-spacing: 2px; }
+#seasProgress { font-size: 8.5px; color: var(--t2); }
+#climateLabel { font-size: 8.5px; color: var(--t2); }
+.pips { display: flex; gap: 4px; }
+.pip  { flex: 1; height: 2px; border-radius: 1px; background: var(--s3); transition: background .3s; }
+.pip.on { background: var(--c); }
+#sp1.on { background: var(--gold); }
+#sp2.on { background: var(--orange); }
+#sp3.on { background: #5888a8; }
+
+/* ─── RESOURCES ─── */
+.rb { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+.rb-l { font-size: 9px; color: var(--t2); width: 34px; flex-shrink: 0; }
+.rb-t { flex: 1; height: 2px; background: var(--s3); border-radius: 1px; overflow: hidden; }
+.rb-f { height: 100%; border-radius: 1px; transition: width .5s; }
+.rb-v { font-size: 9px; color: var(--t1); min-width: 40px; text-align: right; }
+
+/* ─── TRIBES ─── */
+.tribe-row { display: flex; align-items: center; gap: 7px; padding: 5px 3px; border-radius: var(--r); margin-bottom: 1px; cursor: default; transition: background .12s; }
+.tribe-row:hover { background: var(--s2); }
+.tdot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.tname { flex: 1; font-size: 10.5px; color: var(--t0); }
+.tname small { color: var(--t2); font-size: 8px; margin-left: 3px; }
+.tbar-wrap { flex: 1; height: 1.5px; background: var(--s3); border-radius: 1px; overflow: hidden; margin-left: 2px; }
+.tbar { height: 100%; border-radius: 1px; transition: width .5s; }
+.tpop { font-size: 10px; color: var(--t1); min-width: 22px; text-align: right; }
+
+/* ─── DIPLOMACY ─── */
+.dip-row { display: flex; align-items: center; gap: 5px; padding: 3px 3px; margin-bottom: 2px; font-size: 10px; border-radius: var(--r); cursor: default; transition: background .12s; }
+.dip-row:hover { background: var(--s2); }
+.dip-name   { color: var(--t1); flex: 1; font-size: 9.5px; }
+.dip-status { padding: 0px 7px; border-radius: var(--r); font-size: 7.5px; font-weight: 700; letter-spacing: 1px; border: 1px solid; }
+.dip-ally    { color: var(--green);  border-color: rgba(40,168,104,.3); background: rgba(40,168,104,.06); }
+.dip-war     { color: var(--red);    border-color: rgba(192,64,64,.3);  background: rgba(192,64,64,.06); }
+.dip-neutral { color: var(--t2);     border-color: var(--b);            background: transparent; }
+.dip-trade   { color: var(--gold);   border-color: rgba(184,138,40,.3); background: rgba(184,138,40,.06); }
+.dip-vassal  { color: var(--purple); border-color: rgba(120,88,200,.3); background: rgba(120,88,200,.06); }
+
+/* ─── BUILDINGS ─── */
+.bld-item { display: flex; align-items: center; gap: 6px; padding: 5px 8px; border-radius: var(--r); border: 1px solid var(--b); margin-bottom: 3px; cursor: help; font-size: 10px; transition: border-color .12s, background .12s; }
+.bld-item:hover { border-color: var(--b2); background: var(--s2); }
+.bld-icon  { font-size: 11px; width: 16px; text-align: center; }
+.bld-name  { flex: 1; color: var(--t1); font-size: 9.5px; }
+.bld-count { font-size: 11px; font-weight: 700; color: var(--gold); }
+
+/* ─── LOGS ─── */
+#life-log, #event-log, #tech-log { padding: 6px 8px; display: flex; flex-direction: column; gap: 2px; }
+.le {
+  padding: 3px 8px 3px 9px;
+  border-left: 2px solid transparent;
+  font-size: 9.5px; line-height: 1.5;
+  border-radius: 0 var(--r) var(--r) 0;
+  animation: lein .18s ease;
+  cursor: default;
+  transition: filter .1s;
+}
+.le:hover { filter: brightness(1.2); }
+@keyframes lein { from{opacity:0;transform:translateX(-4px)} to{opacity:1;transform:translateX(0)} }
+.le-birth     { border-color: var(--green);  color: #60b878; background: rgba(40,168,104,.025); }
+.le-death     { border-color: var(--red);    color: #b86060; background: rgba(192,64,64,.025); }
+.le-trade     { border-color: var(--gold);   color: #b89840; background: rgba(184,138,40,.025); }
+.le-war       { border-color: var(--orange); color: #b08050; background: rgba(184,112,48,.025); }
+.le-life      { border-color: var(--purple); color: #8878b8; background: rgba(120,88,200,.025); }
+.le-build     { border-color: var(--blue);   color: #6080b8; background: rgba(56,120,216,.025); }
+.le-event     { border-color: var(--c);      color: #409890; background: rgba(24,200,192,.025); }
+.le-diplo     { border-color: #9848a0;       color: #9858a8; background: rgba(152,72,160,.025); }
+.le-tech      { border-color: var(--gold);   color: var(--gold); background: rgba(184,138,40,.04); }
+.le-discovery { border-color: var(--green);  color: #70b840; background: rgba(112,184,64,.04); }
+.le-era       { border-color: var(--gold);   color: var(--gold); background: rgba(184,138,40,.07); font-weight: 700; }
+.le-info      { border-color: var(--b);      color: var(--t2); }
+
+/* ─── TABS ─── */
+.tabs { display: flex; border-bottom: 1px solid var(--b); flex-shrink: 0; }
+.tab {
+  flex: 1; padding: 7px 0;
+  font-size: 8.5px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--t2); text-align: center; cursor: pointer;
+  border-bottom: 1.5px solid transparent;
+  transition: color .15s, border-color .15s;
+}
+.tab:hover { color: var(--t1); }
+.tab.on    { color: var(--c); border-bottom-color: var(--c); }
+
+/* ─── CHART ─── */
+#pop-chart   { width: 100%; height: 66px; display: block; }
+.chart-wrap  { padding: 6px 10px 4px; }
+
+/* ─── INSPECTOR ─── */
+#inspector   { padding: 10px 14px; display: flex; flex-direction: column; gap: 5px; }
+.insp-name   { font-size: 13px; font-weight: 700; }
+.insp-row    { display: flex; justify-content: space-between; color: var(--t2); font-size: 9.5px; }
+.insp-row span { color: var(--t1); }
+.need-bar    { height: 2px; border-radius: 1px; background: var(--s3); overflow: hidden; margin-top: 2px; }
+.need-fill   { height: 100%; border-radius: 1px; transition: width .4s; }
+.inv-grid    { display: grid; grid-template-columns: repeat(3,1fr); gap: 3px; margin-top: 4px; }
+.inv-item    { background: var(--s2); border: 1px solid var(--b); border-radius: var(--r); padding: 3px 6px; display: flex; justify-content: space-between; font-size: 9.5px; transition: border-color .12s; }
+.inv-item:hover { border-color: var(--b2); }
+.inv-item span { color: var(--gold); }
+.life-mini   { font-size: 9px; color: var(--purple); line-height: 1.55; max-height: 70px; overflow-y: auto; border-top: 1px solid var(--b); padding-top: 5px; margin-top: 4px; }
+
+/* ─── CIV PANEL ─── */
+#civPanel { display: flex; flex-direction: column; gap: 7px; }
+.civ-row  { display: flex; gap: 8px; padding: 3px 2px; border-radius: var(--r); cursor: default; transition: background .12s; }
+.civ-row:hover { background: var(--s2); }
+.civ-dot  { width: 5px; height: 5px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+.civ-body { flex: 1; min-width: 0; }
+.civ-name { font-size: 10px; font-weight: 700; display: flex; align-items: center; gap: 5px; margin-bottom: 3px; }
+.civ-era  { font-size: 7.5px; color: var(--t2); font-weight: 400; letter-spacing: .5px; }
+.civ-br   { display: flex; align-items: center; gap: 6px; font-size: 8.5px; color: var(--t2); margin-bottom: 2px; }
+.civ-br span:first-child  { width: 46px; }
+.civ-br span:last-child   { width: 22px; text-align: right; }
+.civ-t { flex: 1; height: 1.5px; background: var(--s3); border-radius: 1px; overflow: hidden; }
+.civ-f { height: 100%; border-radius: 1px; transition: width .5s; }
+.civ-techs { font-size: 8px; color: var(--t2); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ─── PROF CHART ─── */
+#profChart { width: 100%; height: 80px; display: block; }
+.prof-wrap { padding: 4px 10px 8px; }
+
+/* ─── MINI MAP ─── */
+#miniMap { width: 100%; height: 65px; display: block; image-rendering: pixelated; border-radius: 1px; }
+.mini-wrap { padding: 4px 10px 6px; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div id="hdr">
+  <div id="logo">SIM</div>
+  <div id="hdr-stats">
+    <div class="hs"><span class="hs-l">Tick</span><b id="sTick">0</b></div>
+    <div class="hs"><span class="hs-l">Year</span><b id="sYear">0</b></div>
+    <div class="hs"><span class="hs-l">Pop</span><b id="sPop">0</b></div>
+    <div class="hs"><span class="hs-l">Born</span><b id="sBorn">0</b></div>
+    <div class="hs"><span class="hs-l">Died</span><b id="sDied">0</b></div>
+    <div class="hs"><span class="hs-l">Trades</span><b id="sTrades">0</b></div>
+    <div class="hs"><span class="hs-l">Wars</span><b id="sWars">0</b></div>
+    <div class="hs"><span class="hs-l">Builds</span><b id="sBuild">0</b></div>
+    <div class="hs"><span class="hs-l">Families</span><b id="sFamilies">0</b></div>
+    <div class="hs"><span class="hs-l">Disc</span><b id="sDisc">0</b></div>
+  </div>
+  <div id="era-badge">Stone Age</div>
+  <div id="hdr-btns">
+    <button id="btnPause" class="on">⏸ Pause</button>
+    <button id="btnStep">Step</button>
+    <button id="btnSpawn">+ Spawn</button>
+    <button id="btnReset" class="red">⟲ Reset</button>
+  </div>
+</div>
+
+<!-- TICKER -->
+<div id="ticker">
+  <div id="tickerInner">Simulation initialising &nbsp;·&nbsp; generating world &nbsp;·&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; Simulation initialising &nbsp;·&nbsp; generating world &nbsp;·&nbsp;</div>
+</div>
+
+<!-- ERA TIMELINE -->
+<div id="timeline">
+  <div id="timelineBar"></div>
+</div>
+
+<!-- QUICK STATS -->
+<div id="qstats">
+  <div class="qs"><span class="qs-l">Density</span><span class="qs-v" id="popDensity">—</span></div>
+  <div class="qs"><span class="qs-l">Avg Age</span><span class="qs-v" id="avgAge">—</span></div>
+  <div class="qs"><span class="qs-l">Kills</span><span class="qs-v" id="killCount">0</span></div>
+  <div class="qs"><span class="qs-l">Births</span><span class="qs-v" id="birthCount">0</span></div>
+</div>
+
+<!-- MAIN -->
+<div id="main">
+
+  <!-- LEFT PANEL -->
+  <div id="left">
+
+    <div class="blk">
+      <div class="blk-title">Controls</div>
+      <div class="sl"><label>Speed</label><input type="range" id="speedSlider" min="1" max="40" value="5"><span id="speedVal">5x</span></div>
+      <div class="sl"><label>Repro</label><input type="range" id="reproSlider" min="0.1" max="3" step="0.1" value="1"><span id="reproVal">1.0x</span></div>
+    </div>
+
+    <div class="blk">
+      <div class="blk-title">Season</div>
+      <div class="seas-head">
+        <span id="seasName">SPRING</span>
+        <span id="seasProgress">0 / 300</span>
+        <span id="climateLabel">Temperate</span>
+      </div>
+      <div class="pips">
+        <div class="pip on" id="sp0"></div>
+        <div class="pip" id="sp1"></div>
+        <div class="pip" id="sp2"></div>
+        <div class="pip" id="sp3"></div>
+      </div>
+    </div>
+
+    <div class="blk">
+      <div class="blk-title">Resources</div>
+      <div class="rb"><div class="rb-l">Food</div><div class="rb-t"><div class="rb-f" id="rfFood" style="background:#28785a;width:0%"></div></div><div class="rb-v" id="rvFood">0</div></div>
+      <div class="rb"><div class="rb-l">Wood</div><div class="rb-t"><div class="rb-f" id="rfWood" style="background:#805028;width:0%"></div></div><div class="rb-v" id="rvWood">0</div></div>
+      <div class="rb"><div class="rb-l">Stone</div><div class="rb-t"><div class="rb-f" id="rfStone" style="background:#486070;width:0%"></div></div><div class="rb-v" id="rvStone">0</div></div>
+      <div class="rb"><div class="rb-l">Iron</div><div class="rb-t"><div class="rb-f" id="rfIron" style="background:#5068a0;width:0%"></div></div><div class="rb-v" id="rvIron">0</div></div>
+      <div class="rb"><div class="rb-l">Gold</div><div class="rb-t"><div class="rb-f" id="rfGold" style="background:#806020;width:0%"></div></div><div class="rb-v" id="rvGold">0</div></div>
+    </div>
+
+    <div class="blk">
+      <div class="blk-title">Tribes</div>
+      <div id="tribeList"></div>
+    </div>
+
+    <div class="blk">
+      <div class="blk-title">Diplomacy</div>
+      <div id="diploList"></div>
+    </div>
+
+    <div class="blk" style="flex:1;overflow:hidden;display:flex;flex-direction:column">
+      <div class="blk-title">Structures</div>
+      <div class="scrollable"><div id="buildingList"></div></div>
+    </div>
+
+  </div>
+
+  <!-- CANVAS -->
+  <div id="canvas-wrap">
+    <canvas id="simCanvas"></canvas>
+    <div id="pauseOverlay">⏸&nbsp; Paused</div>
+    <div id="eraOverlay"></div>
+    <div id="tooltip"></div>
+    <div id="kb">
+      <span class="kk">Space</span> pause &nbsp;
+      <span class="kk">±</span> speed &nbsp;
+      <span class="kk">1 2 3</span> tabs &nbsp;
+      <span class="kk">R</span> reset
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div id="right">
+
+    <div class="blk">
+      <div class="blk-title">Population &amp; Technology</div>
+      <div class="chart-wrap"><canvas id="pop-chart"></canvas></div>
+    </div>
+
+    <div class="blk">
+      <div class="blk-title">Overview Map</div>
+      <div class="mini-wrap"><canvas id="miniMap"></canvas></div>
+    </div>
+
+    <div class="blk" style="flex-shrink:0;max-height:200px;overflow-y:auto">
+      <div class="blk-title">Agent</div>
+      <div id="inspector">
+        <div style="color:var(--t2);padding:3px 0;font-size:10px">Click any agent on the map</div>
+      </div>
+    </div>
+
+    <div class="blk">
+      <div class="blk-title">Civilisations</div>
+      <div id="civPanel"></div>
+    </div>
+
+    <div class="blk" style="flex-shrink:0">
+      <div class="blk-title">Professions</div>
+      <div class="prof-wrap"><canvas id="profChart"></canvas></div>
+    </div>
+
+    <div class="tabs">
+      <div class="tab on" id="tabLife"  onclick="switchTab('life')">Life</div>
+      <div class="tab"    id="tabEvent" onclick="switchTab('event')">World</div>
+      <div class="tab"    id="tabTech"  onclick="switchTab('tech')">Tech</div>
+    </div>
+    <div class="scrollable">
+      <div id="life-log"></div>
+      <div id="event-log" style="display:none"></div>
+      <div id="tech-log"  style="display:none"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+'use strict';
+// ════════════════════════════════════════════════════════════
+//  CONSTANTS
+// ════════════════════════════════════════════════════════════
+const GW=100,GH=60,TS=10;
+const SEASONS=['SPRING','SUMMER','AUTUMN','WINTER'];
+const SLEN=300;
+const MAX_POP=600;
+
+const TRIBES=[
+  {name:'Solari', color:'#f0a030'},
+  {name:'Noctis', color:'#6070f0'},
+  {name:'Verdant',color:'#40c068'},
+  {name:'Ember',  color:'#e04040'},
+  {name:'Glacial',color:'#40c8e0'},
+  {name:'Aurum',  color:'#d4a0f0'},
+];
+
+// ── CIVILISATION ERAS ──────────────────────────────────────
+const ERAS=[
+  {name:'Stone Age',     minTech:0,   color:'#a09080'},
+  {name:'Bronze Age',    minTech:5,   color:'#c8a040'},
+  {name:'Iron Age',      minTech:12,  color:'#a0b0c0'},
+  {name:'Classical Age', minTech:22,  color:'#d4b060'},
+  {name:'Medieval Age',  minTech:35,  color:'#8060a0'},
+  {name:'Renaissance',   minTech:50,  color:'#60a8d0'},
+  {name:'Industrial Age',minTech:68,  color:'#90a0b0'},
+  {name:'Modern Age',    minTech:88,  color:'#50d0e0'},
+];
+
+// ── TECHNOLOGY TREE ────────────────────────────────────────
+// Each tech unlocks new buildings, behaviors, bonuses
+const TECH_TREE={
+  // Stone Age
+  fire_making:    {name:'Fire Making',     era:0,cost:30, icon:'🔥',unlocks:['campfire'],     desc:'Master of fire — cooking, warmth, defense'},
+  tool_crafting:  {name:'Tool Crafting',   era:0,cost:40, icon:'🪨',unlocks:[],               desc:'Shaped stone tools for hunting and farming'},
+  animal_taming:  {name:'Animal Taming',   era:0,cost:55, icon:'🐄',unlocks:['ranch'],         desc:'Domesticate animals for food and labor'},
+  basic_farming:  {name:'Basic Farming',   era:0,cost:50, icon:'🌱',unlocks:['farm'],           desc:'Cultivate crops, settle near water'},
+  pottery:        {name:'Pottery',         era:0,cost:45, icon:'🏺',unlocks:[],               desc:'Store food and water, trade surplus'},
+  // Bronze Age
+  bronze_working: {name:'Bronze Working',  era:1,cost:80, icon:'⚔',unlocks:['forge'],         desc:'Cast bronze weapons and tools'},
+  writing:        {name:'Writing',         era:1,cost:90, icon:'📜',unlocks:['library'],       desc:'Record knowledge, improve learning speed'},
+  sailing:        {name:'Sailing',         era:1,cost:85, icon:'⛵',unlocks:['harbor'],        desc:'Cross water, trade across rivers'},
+  mathematics:    {name:'Mathematics',     era:1,cost:100,icon:'📐',unlocks:[],               desc:'Architecture, accounting, astronomy'},
+  masonry:        {name:'Masonry',         era:1,cost:75, icon:'🧱',unlocks:['wall','tower'], desc:'Cut stone into blocks, build walls'},
+  // Iron Age
+  iron_smelting:  {name:'Iron Smelting',   era:2,cost:130,icon:'⚒',unlocks:['blacksmith'],   desc:'Iron tools and weapons, superior to bronze'},
+  horseback:      {name:'Horseback Riding',era:2,cost:120,icon:'🐎',unlocks:['stable'],       desc:'Cavalry units, faster trade routes'},
+  crop_rotation:  {name:'Crop Rotation',   era:2,cost:110,icon:'🌾',unlocks:[],              desc:'Triple food yield, sustain larger population'},
+  medicine:       {name:'Medicine',        era:2,cost:140,icon:'🌿',unlocks:['hospital'],     desc:'Herbal medicine reduces plague mortality'},
+  roads:          {name:'Roads',           era:2,cost:120,icon:'🛤',unlocks:[],              desc:'Faster movement, improved trade efficiency'},
+  // Classical
+  philosophy:     {name:'Philosophy',      era:3,cost:180,icon:'🏛',unlocks:['academy'],     desc:'Accelerates all future research'},
+  aqueducts:      {name:'Aqueducts',       era:3,cost:160,icon:'💧',unlocks:['aqueduct'],    desc:'Long-range water delivery, city growth'},
+  siege_weapons:  {name:'Siege Weapons',   era:3,cost:170,icon:'🏹',unlocks:[],              desc:'Capture enemy buildings, stronger warfare'},
+  coinage:        {name:'Coinage',         era:3,cost:150,icon:'🪙',unlocks:['market'],      desc:'Standardised money boosts trade income'},
+  architecture:   {name:'Architecture',    era:3,cost:200,icon:'🏗',unlocks:['monument'],    desc:'Grand monuments, city prestige and morale'},
+  // Medieval
+  feudalism:      {name:'Feudalism',       era:4,cost:250,icon:'🏰',unlocks:['castle'],      desc:'Organised armies, fortified cities'},
+  steel:          {name:'Steelmaking',     era:4,cost:280,icon:'🗡',unlocks:[],              desc:'Stronger weapons and armour than iron'},
+  navigation:     {name:'Navigation',     era:4,cost:260,icon:'🧭',unlocks:[],              desc:'Chart coastlines, long-range exploration'},
+  theology:       {name:'Theology',        era:4,cost:240,icon:'⛪',unlocks:['cathedral'],   desc:'Religious unity raises morale and fertility'},
+  guilds:         {name:'Guilds',          era:4,cost:270,icon:'🔨',unlocks:[],              desc:'Specialist craftsmen, faster building'},
+  // Renaissance
+  printing_press: {name:'Printing Press',  era:5,cost:350,icon:'📰',unlocks:[],              desc:'Knowledge spreads 3x faster across tribes'},
+  gunpowder:      {name:'Gunpowder',       era:5,cost:380,icon:'💣',unlocks:[],              desc:'Firearms — devastating military advantage'},
+  astronomy:      {name:'Astronomy',       era:5,cost:360,icon:'🔭',unlocks:['observatory'], desc:'Navigation, farming calendar, science boost'},
+  banking:        {name:'Banking',         era:5,cost:340,icon:'🏦',unlocks:['bank'],        desc:'Credit and interest, wealth accumulation'},
+  // Industrial
+  steam_engine:   {name:'Steam Engine',    era:6,cost:500,icon:'⚙',unlocks:['factory'],     desc:'Mechanise production, massive resource gain'},
+  chemistry:      {name:'Chemistry',       era:6,cost:480,icon:'⚗',unlocks:['laboratory'],  desc:'Fertilisers, medicines, explosives'},
+  electricity:    {name:'Electricity',     era:6,cost:550,icon:'⚡',unlocks:[],              desc:'Power industry and communications'},
+  // Modern
+  germ_theory:    {name:'Germ Theory',     era:7,cost:650,icon:'🔬',unlocks:[],              desc:'Vastly reduces disease mortality'},
+  combustion:     {name:'Combustion',      era:7,cost:700,icon:'🚂',unlocks:[],              desc:'Rapid transport, economic explosion'},
+};
+
+// ── BUILDINGS ─────────────────────────────────────────────
+const BLDGS={
+  campfire:  {icon:'🔥',name:'Campfire',   cost:{wood:5,stone:0},   era:0,effect:'warmth',    desc:'Warmth, cooking, deters predators'},
+  hut:       {icon:'🏠',name:'Hut',        cost:{wood:15,stone:5},  era:0,effect:'shelter',   desc:'Reduces fatigue, boosts fertility'},
+  farm:      {icon:'🌾',name:'Farm',       cost:{wood:8,stone:0},   era:0,effect:'food',      desc:'2× food regen on tile'},
+  well:      {icon:'💧',name:'Well',       cost:{wood:5,stone:10},  era:0,effect:'water',     desc:'Water source, reduces thirst'},
+  ranch:     {icon:'🐄',name:'Ranch',      cost:{wood:12,stone:0},  era:0,effect:'food',      desc:'Passive food generation'},
+  forge:     {icon:'⚒',name:'Forge',      cost:{wood:10,stone:20}, era:1,effect:'craft',     desc:'Tool crafting, iron production'},
+  blacksmith:{icon:'⚔',name:'Blacksmith', cost:{wood:15,stone:25}, era:2,effect:'military',  desc:'Iron weapons, better combat'},
+  tower:     {icon:'🗼',name:'Watch Tower',cost:{wood:20,stone:15}, era:1,effect:'vision',    desc:'Extended scouting range'},
+  wall:      {icon:'🧱',name:'Stone Wall', cost:{wood:5,stone:30},  era:1,effect:'defense',   desc:'Slows enemy attacks on settlement'},
+  library:   {icon:'📚',name:'Library',    cost:{wood:20,stone:20}, era:1,effect:'research',  desc:'Doubles knowledge generation'},
+  harbor:    {icon:'⛵',name:'Harbor',     cost:{wood:30,stone:15}, era:1,effect:'trade',     desc:'Long-range water trade'},
+  shrine:    {icon:'⛩',name:'Shrine',     cost:{wood:20,stone:25}, era:0,effect:'morale',    desc:'Boosts reproduction and morale'},
+  stable:    {icon:'🐎',name:'Stable',     cost:{wood:25,stone:10}, era:2,effect:'speed',     desc:'Cavalry, faster movement'},
+  hospital:  {icon:'🏥',name:'Hospital',   cost:{wood:20,stone:30}, era:2,effect:'health',    desc:'Reduces disease deaths by 60%'},
+  market:    {icon:'🏪',name:'Market',     cost:{wood:20,stone:15}, era:3,effect:'trade',     desc:'Attracts traders, gold income'},
+  academy:   {icon:'🏛',name:'Academy',    cost:{wood:30,stone:40}, era:3,effect:'research',  desc:'Triples knowledge, unlocks advanced techs'},
+  aqueduct:  {icon:'🌊',name:'Aqueduct',   cost:{wood:15,stone:50}, era:3,effect:'water',     desc:'City-wide water, supports 50% more pop'},
+  monument:  {icon:'🗿',name:'Monument',   cost:{wood:10,stone:80}, era:3,effect:'prestige',  desc:'Massive morale/culture boost'},
+  castle:    {icon:'🏰',name:'Castle',     cost:{wood:40,stone:100},era:4,effect:'military',  desc:'Fortified stronghold, territory control'},
+  cathedral: {icon:'⛪',name:'Cathedral',  cost:{wood:50,stone:120},era:4,effect:'culture',   desc:'Cultural center, high morale'},
+  observatory:{icon:'🔭',name:'Observatory',cost:{wood:30,stone:60},era:5,effect:'science',  desc:'Astronomy research, navigation'},
+  bank:      {icon:'🏦',name:'Bank',       cost:{wood:30,stone:40}, era:5,effect:'economy',  desc:'Gold interest, wealth storage'},
+  factory:   {icon:'🏭',name:'Factory',    cost:{wood:60,stone:80}, era:6,effect:'industry', desc:'Mass production of resources'},
+  laboratory:{icon:'🧪',name:'Laboratory', cost:{wood:40,stone:60}, era:6,effect:'science',  desc:'Advanced research, chemistry'},
+};
+
+// ── LAND DISCOVERY SITES ───────────────────────────────────
+const DISCOVERY_TYPES={
+  ancient_ruins:  {icon:'🏛',name:'Ancient Ruins',    desc:'+20 knowledge, reveals tech clue',  knowledge:20},
+  mineral_vein:   {icon:'💎',name:'Mineral Vein',     desc:'Rich iron/gold deposit discovered',  iron:60,gold:30},
+  fertile_valley: {icon:'🌿',name:'Fertile Valley',   desc:'Extremely fertile land found',       food_mult:2},
+  cave_system:    {icon:'🕳',name:'Cave System',      desc:'Stone shelter, iron ore inside',     stone:80,iron:40},
+  hot_spring:     {icon:'♨',name:'Hot Spring',       desc:'Healing waters — health boost',      health:true},
+  sacred_grove:   {icon:'🌳',name:'Sacred Grove',     desc:'Spiritual site — morale +15',        morale:true},
+  trade_crossing: {icon:'🛤',name:'Trade Crossing',   desc:'Natural trade route junction',       trade:true},
+  ancient_forge:  {icon:'⚔',name:'Ancient Forge',    desc:'Old smithing site, +iron skills',    iron:50},
+};
+
+let _aid=0;
+function rand(a,b){return a+Math.floor(Math.random()*(b-a+1))}
+function pick(a){return a[Math.floor(Math.random()*a.length)]}
+function dist(a,b){return Math.abs(a.x-b.x)+Math.abs(a.y-b.y)}
+function clamp(v,lo,hi){return v<lo?lo:v>hi?hi:v}
+
+const families=new Map();
+
+const FIRST=['Aran','Bela','Cael','Dara','Evin','Fira','Gorn','Hali','Ivar','Juna','Kael','Lyra','Miro','Neva','Orin','Pira','Rael','Sova','Tara','Urva','Vael','Wren','Xara','Yuna','Zora','Alun','Bran','Cora','Deva','Emre','Fenn','Gale','Hera','Isen','Jova','Kira','Lorn','Mave','Nox','Opal','Penn','Reva','Sten','Thea','Ulva','Vera'];
+const SURNAMES=['Stone','River','Oak','Hill','Vale','Marsh','Frost','Flame','Swift','Iron','Gold','Ash','Thorn','Brook','Moor','Wolf','Bear','Hawk','Sage','Reed'];
+function randName(){return pick(FIRST)+' '+pick(SURNAMES)}
+
+// ════════════════════════════════════════════════════════════
+//  TILE
+// ════════════════════════════════════════════════════════════
+class Tile{
+  constructor(x,y){
+    this.x=x;this.y=y;
+    const r=Math.random();
+    if(r<0.09)      this.type='water';
+    else if(r<0.17) this.type='mountain';
+    else if(r<0.36) this.type='forest';
+    else if(r<0.45) this.type='desert';
+    else if(r<0.52) this.type='jungle';
+    else if(r<0.58) this.type='tundra';
+    else            this.type='plains';
+    this.food = this.type==='forest'?rand(60,130):this.type==='plains'?rand(15,55):this.type==='jungle'?rand(80,150):this.type==='desert'?rand(0,8):this.type==='tundra'?rand(0,10):0;
+    this.wood = this.type==='forest'?rand(40,90):this.type==='jungle'?rand(60,120):0;
+    this.stone= this.type==='mountain'?rand(80,160):0;
+    this.iron = this.type==='mountain'?rand(0,40):0;
+    this.goldOre=this.type==='mountain'&&Math.random()<0.15?rand(10,30):0;
+    this.mxF=this.food;this.mxW=this.wood;this.mxS=this.stone;this.mxI=this.iron;this.mxG=this.goldOre;
+    this.agent=null;
+    this.building=null;
+    this.fertility=Math.random()*0.5+0.5;
+    this.discovered=false; // fog of war
+    this.discoveryType=null; // special site
+    this.pollution=0; // industrial era effect
+    // Random discovery sites (rare)
+    if(Math.random()<0.025 && this.type!=='water'){
+      const keys=Object.keys(DISCOVERY_TYPES);
+      this.discoveryType=keys[Math.floor(Math.random()*keys.length)];
+    }
+  }
+  regen(season,globalTech){
+    const f=season==='SPRING'?1.4:season==='SUMMER'?1.0:season==='AUTUMN'?0.65:0.25;
+    const farmBoost=this.building&&this.building.type==='farm'?2.2:this.building&&this.building.type==='ranch'?1.5:1;
+    const cropRot=globalTech>=12?1.3:1; // crop rotation tech
+    const pollution=Math.max(0,1-this.pollution*0.02);
+    if(this.type==='forest'||this.type==='plains'||this.type==='jungle'){
+      this.food=Math.min(this.mxF,this.food+0.55*f*farmBoost*cropRot*this.fertility*pollution);
+      this.wood=Math.min(this.mxW,this.wood+0.13*f*pollution);
+    }
+    if(this.type==='tundra')this.food=Math.min(this.mxF,this.food+0.1*f*this.fertility);
+    if(this.type==='mountain'){
+      this.stone=Math.min(this.mxS,this.stone+0.09);
+      this.iron=Math.min(this.mxI,this.iron+0.06);
+      this.goldOre=Math.min(this.mxG,this.goldOre+0.02);
+    }
+    // Factory pollution
+    if(this.building&&this.building.type==='factory')this.pollution=Math.min(10,this.pollution+0.001);
+  }
+}
+
+// ════════════════════════════════════════════════════════════
+//  CIVILIZATION (per tribe: tech, knowledge, era)
+// ════════════════════════════════════════════════════════════
+class Civilization{
+  constructor(tribe){
+    this.tribe=tribe;
+    this.techs=new Set();        // unlocked tech keys
+    this.knowledge=0;            // research points
+    this.techCount=0;
+    this.era=0;
+    this.gold=0;
+    this.morale=50;              // 0-100
+    this.culture=0;
+    this.discoveries=[];
+    this.totalKnowledge=0;
+  }
+  addKnowledge(amt){
+    this.knowledge+=amt;
+    this.totalKnowledge+=amt;
+  }
+  tryResearch(sim){
+    // find cheapest available tech not yet unlocked
+    const era=this.era;
+    const avail=Object.entries(TECH_TREE).filter(([k,v])=>!this.techs.has(k)&&v.era<=era&&v.era>=era-1);
+    if(!avail.length)return;
+    // pick cheapest the tribe can afford
+    avail.sort((a,b)=>a[1].cost-b[1].cost);
+    for(const[key,tech] of avail){
+      if(this.knowledge>=tech.cost){
+        this.knowledge-=tech.cost;
+        this.techs.add(key);
+        this.techCount++;
+        sim.totalDiscoveries++;
+        sim.logTech(`⚗ ${this.tribe.name} discovered: ${tech.name} — ${tech.desc}`,'tech');
+        // era advance
+        this._checkEra(sim);
+        return;
+      }
+    }
+  }
+  _checkEra(sim){
+    for(let i=ERAS.length-1;i>=0;i--){
+      if(this.techCount>=ERAS[i].minTech&&this.era<i){
+        this.era=i;
+        const era=ERAS[i];
+        sim.logTech(`🌟 ${this.tribe.name} enters the ${era.name}!`,'era');
+        sim.showEraMessage(`${this.tribe.name} — ${era.name}`);
+        // global era badge: show highest era reached
+        const maxEra=Math.max(...Object.values(sim.civs).map(c=>c.era));
+        document.getElementById('era-badge').textContent=ERAS[maxEra].name;
+        document.getElementById('era-badge').style.color=ERAS[maxEra].color;
+        document.getElementById('era-badge').style.borderColor=ERAS[maxEra].color;
+        return;
+      }
+    }
+  }
+  hasTech(key){return this.techs.has(key);}
+  canBuild(btype){
+    const def=BLDGS[btype];
+    if(!def)return false;
+    if(def.era===0)return true;
+    // check era and any required techs
+    return this.era>=def.era;
+  }
+}
+
+// ════════════════════════════════════════════════════════════
+//  AGENT
+// ════════════════════════════════════════════════════════════
+class Agent{
+  constructor(x,y,tribe,dna,parent1,parent2){
+    this.id=_aid++;
+    this.name=randName();
+    this.x=x;this.y=y;this.tribe=tribe;
+    this.alive=true;this.age=0;
+    this.maxAge=rand(1800,3200);
+    this.stage='infant';
+    this.profession='gatherer'; // gatherer|farmer|warrior|trader|builder|scholar|healer
+    this.parents=parent1?[parent1,parent2].filter(p=>p):[];
+    this.children=[];this.familyId=null;this.generation=0;
+    if(parent1){
+      this.generation=Math.max(parent1.generation||0,parent2?.generation||0)+1;
+      this.familyId=parent1.familyId||`fam_${_aid}_${Math.random().toString(36).substr(2,4)}`;
+    }
+    this.parentName=parent1?.name||null;
+    this.hunger=rand(5,20);this.thirst=rand(5,20);this.fatigue=rand(0,15);this.social=rand(30,70);
+    this.health=100; // new health stat
+    this.happiness=rand(40,70); // affects productivity
+    this.dna=dna||{
+      openness:Math.random(),conscientiousness:Math.random(),
+      extraversion:Math.random(),agreeableness:Math.random(),
+      aggression:Math.random()*0.45,intelligence:Math.random(),
+      fertility:Math.random()*0.5+0.5,creativity:Math.random(),
+      constitution:Math.random(), // affects health
+    };
+    this.skills={
+      foraging:0.2+Math.random()*0.3,trading:0.1+Math.random()*0.3,
+      fighting:0.1+Math.random()*0.3,building:0.1+Math.random()*0.2,
+      farming:0.1+Math.random()*0.3,scholarship:0.05+Math.random()*0.2,
+      healing:0.05+Math.random()*0.15,
+    };
+    this.inv={food:rand(6,16),wood:0,stone:0,iron:0,gold:0,tools:0,medicine:0};
+    this.state='wander';this.target=null;this.targetAgent=null;this.cooldown=0;this.lastReproTick=0;
+    this.mate=null;this.pregnancyProgress=0;this.isPregnant=false;this.gestationPeriod=rand(40,60);
+    this.mateBondDuration=0;
+    this.knowledgePoints=0; // individual research contribution
+    this.diseased=false;this.diseaseTimer=0;
+    this.exploredTiles=new Set(); // track exploration
+    this.lifeLog=[];
+    this.lifeLog.push(`Born${parent1?' to '+parent1.name:' into the world'} (${tribe.name})`);
+    this.totalFoodEaten=0;this.totalTrades=0;this.totalKills=0;this.totalBuilt=0;this.totalResearched=0;
+  }
+  get lifeStageName(){
+    const a=this.age;
+    if(a<100)return'infant';if(a<600)return'child';if(a<900)return'youth';if(a<2250)return'adult';return'elder';
+  }
+  addLife(msg){
+    this.lifeLog.push(`[yr${Math.floor(this.age/50)}] ${msg}`);
+    if(this.lifeLog.length>50)this.lifeLog.shift();
+  }
+  canReproduce(){return this.stage==='adult'&&this.hunger<60&&this.thirst<60&&this.fatigue<70&&this.health>30&&this.age>900&&this.age<2250;}
+  findMate(sim){return sim.findAgent(this,10,a=>a.tribe===this.tribe&&a.stage==='adult'&&a!==this&&!a.isPregnant&&a.canReproduce()&&a.dna.agreeableness>0.25);}
+
+  update(sim){
+    if(!this.alive)return;
+    this.age++;
+    const prevStage=this.stage;this.stage=this.lifeStageName;
+    if(this.stage!==prevStage){
+      this.addLife(`Became a ${this.stage}`);
+      sim.logLife(`${this.tribe.name} · ${this.name} became a ${this.stage}`,'life');
+      // assign profession on becoming adult
+      if(this.stage==='adult')this._assignProfession(sim);
+    }
+
+    // ── Needs ──
+    const vul=this.stage==='infant'||this.stage==='elder'?1.35:1.0;
+    const moving=['wander','seek_food','seek_water','seek_mate','explore'].includes(this.state)?1:0;
+    const civ=sim.civs[this.tribe.name];
+    const hasMed=civ&&civ.hasTech('medicine');
+    const hasAqua=sim.hasBuilding(this.x,this.y,'aqueduct',8);
+    this.hunger+=0.035*vul+moving*0.012;
+    this.thirst+=0.038*vul+moving*0.015-(hasAqua?0.015:0);
+    this.fatigue+=0.025*vul-(this.state==='rest'?0.35:0);
+    this.fatigue=clamp(this.fatigue,0,100);
+    this.social-=0.015;
+    this.health=clamp(this.health+(this.diseased?-0.3:0.02)*(hasMed?0.4:1),0,100);
+    this.happiness=clamp(this.happiness+(civ?civ.morale/500:0)-0.01,0,100);
+
+    // Disease spread
+    if(this.diseased){
+      this.diseaseTimer--;
+      if(this.diseaseTimer<=0){this.diseased=false;this.addLife('Recovered from illness');}
+      // spread to nearby agents
+      if(Math.random()<0.005&&!hasMed){
+        const nearby=sim.findAgent(this,2,a=>!a.diseased&&a.alive);
+        if(nearby){nearby.diseased=true;nearby.diseaseTimer=rand(100,300);}
+      }
+    }
+
+    // Near hospital
+    if(sim.hasBuilding(this.x,this.y,'hospital',4)){this.health=clamp(this.health+0.2,0,100);if(this.diseased&&Math.random()<0.02){this.diseased=false;this.diseaseTimer=0;}}
+    if(sim.hasBuilding(this.x,this.y,'well',3))this.thirst=clamp(this.thirst-0.5,0,100);
+    if(sim.hasBuilding(this.x,this.y,'shrine',4)){this.social=clamp(this.social+0.1,0,100);if(this.isPregnant)this.pregnancyProgress+=0.2;}
+    if(sim.hasBuilding(this.x,this.y,'hut',2))this.fatigue=clamp(this.fatigue-0.2,0,100);
+    if(sim.hasBuilding(this.x,this.y,'campfire',2)){this.fatigue=clamp(this.fatigue-0.1,0,100);this.hunger=clamp(this.hunger-0.05,0,100);}
+    if(sim.hasBuilding(this.x,this.y,'cathedral',5))this.happiness=clamp(this.happiness+0.05,0,100);
+
+    // Infant care
+    if(this.stage==='infant'){
+      const pn=this.parents.some(p=>p&&p.alive&&dist(this,p)<4);
+      if(!pn){this.hunger+=0.3;this.thirst+=0.3;}
+      if(this.hunger>40&&this.inv.food===0){for(let p of this.parents){if(p&&p.alive&&p.inv.food>3&&dist(this,p)<3){const f=Math.min(3,p.inv.food);p.inv.food-=f;this.inv.food+=f;break;}}}
+    }
+
+    // Pregnancy
+    if(this.isPregnant){
+      this.pregnancyProgress+=1.0*(sim.reproductionRate||1);
+      this.hunger+=0.2;this.thirst+=0.2;
+      if(this.pregnancyProgress>=100)this.giveBirth(sim);
+    }
+
+    // Auto-eat
+    if(this.hunger>28&&this.inv.food>0){
+      const eat=Math.min(this.inv.food,Math.ceil(this.hunger/28));
+      this.inv.food-=eat;this.hunger=clamp(this.hunger-eat*23,0,100);this.totalFoodEaten+=eat;
+    }
+    // Use medicine if diseased
+    if(this.diseased&&this.inv.medicine>0){this.inv.medicine--;this.diseased=false;this.diseaseTimer=0;this.health=clamp(this.health+20,0,100);}
+
+    // Deaths
+    if(this.hunger>=100){this.die(sim,'starvation');return;}
+    if(this.thirst>=100){this.die(sim,'dehydration');return;}
+    if(this.health<=0){this.die(sim,'disease');return;}
+    if(this.age>=this.maxAge){this.die(sim,'old age');return;}
+
+    if(this.cooldown>0){this.cooldown--;return;}
+
+    // Scholar profession generates knowledge
+    if(this.profession==='scholar'&&this.stage==='adult'){
+      const lib=sim.hasBuilding(this.x,this.y,'library',4)?2:sim.hasBuilding(this.x,this.y,'academy',5)?4:sim.hasBuilding(this.x,this.y,'observatory',4)?3:1;
+      const kGain=0.01*this.skills.scholarship*this.dna.intelligence*lib*(civ&&civ.hasTech('philosophy')?2:1)*(civ&&civ.hasTech('printing_press')?3:1);
+      this.knowledgePoints+=kGain;
+      if(this.knowledgePoints>=1){
+        const civObj=sim.civs[this.tribe.name];
+        if(civObj){civObj.addKnowledge(Math.floor(this.knowledgePoints));this.knowledgePoints%=1;this.totalResearched++;}
+      }
+    }
+    // Healer heals nearby agents
+    if(this.profession==='healer'&&this.stage!=='infant'){
+      const sick=sim.findAgent(this,3,a=>a.diseased&&a.alive);
+      if(sick&&this.inv.medicine>0){this.inv.medicine--;sick.diseased=false;sick.diseaseTimer=0;sick.health=clamp(sick.health+30,0,100);this.addLife(`Healed ${sick.name}`);}
+    }
+
+    // Mark tile as discovered
+    const tKey=`${this.x},${this.y}`;
+    if(!this.exploredTiles.has(tKey)){
+      this.exploredTiles.add(tKey);
+      const tile=sim.grid[this.y][this.x];
+      if(!tile.discovered){
+        tile.discovered=true;
+        sim.discoveredCount++;
+        // Trigger discovery event on special sites
+        if(tile.discoveryType&&Math.random()<0.3)this._triggerDiscovery(sim,tile);
+      }
+    }
+
+    this._decideState(sim);
+    this._executeState(sim);
+  }
+
+  _assignProfession(sim){
+    const civ=sim.civs[this.tribe.name];
+    const pop=sim.agents.filter(a=>a.tribe===this.tribe&&a.alive).length;
+    // Counts of each profession
+    const counts={gatherer:0,farmer:0,warrior:0,trader:0,builder:0,scholar:0,healer:0};
+    for(const a of sim.agents)if(a.tribe===this.tribe&&a.stage==='adult')counts[a.profession]=(counts[a.profession]||0)+1;
+    // Weighted assignment based on DNA and needs
+    const weights={
+      gatherer:   1.0,
+      farmer:     this.dna.conscientiousness*(civ&&civ.hasTech('basic_farming')?2:0.3),
+      warrior:    this.dna.aggression*2,
+      trader:     this.dna.extraversion*(civ&&civ.hasTech('coinage')?2:1),
+      builder:    this.dna.conscientiousness*(counts.builder<3?2:0.5),
+      scholar:    this.dna.intelligence*(civ&&civ.hasTech('writing')?2:0.1)*(counts.scholar<pop*0.1?3:0.5),
+      healer:     this.dna.agreeableness*(civ&&civ.hasTech('medicine')?3:0.1)*(counts.healer<3?3:0.3),
+    };
+    const total=Object.values(weights).reduce((a,b)=>a+b,0);
+    let r=Math.random()*total;
+    for(const[p,w] of Object.entries(weights)){r-=w;if(r<=0){this.profession=p;break;}}
+    this.addLife(`Became a ${this.profession}`);
+  }
+
+  _triggerDiscovery(sim,tile){
+    const dtype=DISCOVERY_TYPES[tile.discoveryType];
+    if(!dtype)return;
+    const civ=sim.civs[this.tribe.name];
+    if(dtype.knowledge&&civ)civ.addKnowledge(dtype.knowledge);
+    if(dtype.iron){tile.iron=Math.min(tile.mxI,tile.iron+dtype.iron);}
+    if(dtype.gold){tile.goldOre=Math.min(tile.mxG,tile.goldOre+dtype.gold);}
+    if(dtype.stone){tile.stone=Math.min(tile.mxS,tile.stone+dtype.stone);}
+    if(dtype.food_mult)tile.mxF=Math.floor(tile.mxF*dtype.food_mult);
+    if(dtype.health)this.health=100;
+    if(dtype.morale&&civ)civ.morale=clamp(civ.morale+15,0,100);
+    this.addLife(`Discovered ${dtype.name}`);
+    sim.logTech(`🔍 ${this.name} (${this.tribe.name}) discovered ${dtype.name} at (${tile.x},${tile.y}) — ${dtype.desc}`,'discovery');
+  }
+
+  _decideState(sim){
+    if(this.thirst>55){this.state='seek_water';this.target=null;return;}
+    if(this.hunger>62&&this.inv.food===0){this.state='seek_food';this.target=null;return;}
+    if(this.fatigue>80){this.state='rest';return;}
+    if(this.health<30){this.state='rest';return;}
+    if(this.stage==='infant'||this.stage==='child'){this.state='wander';return;}
+
+    // Mating
+    if(this.stage==='adult'&&!this.isPregnant&&this.age>900&&this.age<2250){
+      if(this.mate&&this.mate.alive&&this.mate.stage==='adult'){
+        if(dist(this,this.mate)<=1)this.attemptReproduction(sim);
+        else{this.state='seek_mate';this.targetAgent=this.mate;}
+        return;
+      } else {
+        const pm=this.findMate(sim);
+        if(pm){this.mate=pm;pm.mate=this;this.mateBondDuration=200;pm.mateBondDuration=200;sim.logLife(`${this.name} and ${pm.name} formed a pair bond`,'life');this.state='seek_mate';return;}
+      }
+    }
+
+    // Profession-driven behaviour
+    if(this.profession==='scholar'&&Math.random()<0.4){
+      const lib=sim.findTile(this.x,this.y,15,t=>t.building&&['library','academy','observatory'].includes(t.building.type)&&t.building.tribe===this.tribe);
+      if(lib){this.target=lib;this.state='gather';return;}
+    }
+    if(this.profession==='healer'){
+      const sick=sim.findAgent(this,8,a=>a.diseased&&a.alive&&a.tribe===this.tribe);
+      if(sick){this.targetAgent=sick;this.state='heal';return;}
+      // Gather herbs if low on medicine
+      if(this.inv.medicine<3){const forest=sim.findTile(this.x,this.y,10,t=>t.type==='forest'&&t.food>20);if(forest){this.target=forest;this.state='gather';return;}}
+    }
+    if(this.profession==='explorer'){
+      this.state='explore';return;
+    }
+
+    const U={
+      seek_food:(this.hunger/100)*9+(this.inv.food<4?4:0),
+      seek_water:(this.thirst/100)*8,
+      gather:this.dna.conscientiousness*5+(this.inv.food<10?2:0)+(this.stage==='adult'?1:0),
+      rest:(this.fatigue/100)*6,
+      build:this.dna.conscientiousness*3*this.skills.building*(this.inv.wood>10||this.inv.stone>10||this.inv.iron>5?2:0.3),
+      trade:this.dna.extraversion*3*this.skills.trading*(this.inv.food>18?2:0.4),
+      attack:this.dna.aggression*2*(this.stage==='adult'||this.stage==='youth'?1:0.05),
+      socialize:((100-this.social)/100)*this.dna.extraversion*4,
+      explore:this.dna.openness*2*(this.profession==='explorer'?3:1),
+      wander:this.dna.openness*1.2+0.3,
+    };
+    const best=Object.keys(U).reduce((a,b)=>U[a]>U[b]?a:b);
+    if(best!==this.state){this.state=best;this.target=null;this.targetAgent=null;}
+  }
+
+  attemptReproduction(sim){
+    if(!this.mate||!this.mate.alive)return false;
+    if(!this.canReproduce()||!this.mate.canReproduce())return false;
+    if(sim.tick-this.lastReproTick<150||sim.tick-this.mate.lastReproTick<150)return false;
+    if(sim.agents.length>=MAX_POP)return false;
+    const civ=sim.civs[this.tribe.name];
+    let chance=0.1;
+    chance*=(this.dna.fertility||1)*(this.mate.dna.fertility||1);
+    if(sim.hasBuilding(this.x,this.y,'shrine',5))chance*=1.5;
+    if(sim.hasBuilding(this.x,this.y,'hut',3))chance*=1.3;
+    if(civ&&civ.hasTech('theology'))chance*=1.2;
+    const s=sim.seasonIdx;
+    if(s===0)chance*=1.4;else if(s===1)chance*=1.2;else if(s===2)chance*=0.8;else chance*=0.4;
+    chance*=sim.reproductionRate;
+    if(sim.agents.length<20)chance*=2.5;
+    if(Math.random()<chance&&!this.isPregnant&&!this.mate.isPregnant){
+      const mother=Math.random()<0.5?this:this.mate;
+      mother.isPregnant=true;mother.pregnancyProgress=0;
+      mother.addLife(`Expecting a child with ${mother===this?this.mate.name:this.name}`);
+      sim.logLife(`${mother.name} (${this.tribe.name}) is expecting a child`,'life');
+      this.lastReproTick=sim.tick;this.mate.lastReproTick=sim.tick;
+      return true;
+    }
+    return false;
+  }
+
+  giveBirth(sim){
+    const pos=sim.emptyAdj(this.x,this.y);if(!pos)return;
+    const cd={};
+    for(let k in this.dna){const fd=this.mate?(Math.random()<0.5?this.dna[k]:this.mate.dna[k]):this.dna[k];cd[k]=clamp(fd+(Math.random()-0.5)*0.08,0,1);}
+    const child=new Agent(pos.x,pos.y,this.tribe,cd,this,this.mate);
+    child.inv.food=3;this.inv.food=Math.max(0,this.inv.food-2);
+    if(this.mate)this.mate.inv.food=Math.max(0,this.mate.inv.food-2);
+    sim.grid[pos.y][pos.x].agent=child;sim.agents.push(child);sim.totalBorn++;
+    this.children.push(child);if(this.mate)this.mate.children.push(child);
+    const fid=this.familyId||this.mate?.familyId||`fam_${_aid}_${Math.random().toString(36).substr(2,4)}`;
+    child.familyId=fid;
+    if(!families.has(fid))families.set(fid,{parents:[this,this.mate],children:[],generation:this.generation+1,tribe:this.tribe});
+    const fam=families.get(fid);if(fam)fam.children.push(child);
+    this.addLife(`Gave birth to ${child.name}`);
+    if(this.mate)this.mate.addLife(`Welcomed child ${child.name}`);
+    sim.logLife(`${this.name} gave birth to ${child.name} (Gen ${child.generation})`,'birth');
+    this.isPregnant=false;this.pregnancyProgress=0;
+    this.lastReproTick=sim.tick;if(this.mate)this.mate.lastReproTick=sim.tick;
+  }
+
+  _executeState(sim){
+    const tile=sim.grid[this.y][this.x];
+    const civ=sim.civs[this.tribe.name];
+
+    if(this.state==='rest'){
+      const hut=sim.hasBuilding(this.x,this.y,'hut',2);
+      const castle=sim.hasBuilding(this.x,this.y,'castle',4);
+      this.fatigue=clamp(this.fatigue-(hut?0.5:castle?0.7:0.15),0,100);
+      if(this.fatigue<12)this.state='wander';
+      return;
+    }
+
+    if(this.state==='heal'&&this.targetAgent){
+      if(!this.targetAgent.alive){this.targetAgent=null;this.state='wander';return;}
+      if(dist(this,this.targetAgent)<=1){
+        // heal
+        const patient=this.targetAgent;
+        patient.health=clamp(patient.health+15,0,100);
+        if(patient.diseased&&this.inv.medicine>0){this.inv.medicine--;patient.diseased=false;patient.diseaseTimer=0;}
+        this.skills.healing=Math.min(1,this.skills.healing+0.005);
+        this.targetAgent=null;this.state='wander';this.cooldown=20;
+      }else this._moveToAgent(sim,this.targetAgent);
+      return;
+    }
+
+    if(this.state==='explore'){
+      // Move toward undiscovered tiles
+      if(!this.target){
+        let best=null,bd=Infinity;
+        const r=20+Math.floor(this.dna.openness*15);
+        for(let dy=-r;dy<=r;dy+=3)for(let dx=-r;dx<=r;dx+=3){
+          const nx=clamp(this.x+dx,0,GW-1),ny=clamp(this.y+dy,0,GH-1);
+          const t=sim.grid[ny][nx];
+          if(!t.discovered){const d=dist({x:nx,y:ny},this);if(d<bd){bd=d;best=t;}}
+        }
+        this.target=best;
+      }
+      if(this.target)this._moveTo(sim,this.target);
+      else this._randMove(sim);
+      return;
+    }
+
+    if(this.state==='seek_mate'&&this.targetAgent){
+      if(!this.targetAgent.alive){this.mate=null;this.state='wander';return;}
+      if(dist(this,this.targetAgent)>1)this._moveToAgent(sim,this.targetAgent);
+      return;
+    }
+
+    if(this.state==='seek_water'){
+      const nearWater=[[0,1],[1,0],[0,-1],[-1,0]].some(([dx,dy])=>{const nt=sim.grid[this.y+dy]?.[this.x+dx];return nt&&nt.type==='water';});
+      if(tile.type==='water'||nearWater||sim.hasBuilding(this.x,this.y,'well',2)||sim.hasBuilding(this.x,this.y,'aqueduct',6)){
+        this.thirst=clamp(this.thirst-65,0,100);if(this.thirst<10)this.state='wander';return;
+      }
+      if(!this.target)this.target=sim.findTile(this.x,this.y,30,t=>t.type==='water'||!!sim.getBuildingOnTile(t.x,t.y,'well'));
+      if(this.target)this._moveTo(sim,this.target);
+      else this._randMove(sim);
+      return;
+    }
+
+    if(this.state==='seek_food'||this.state==='gather'){
+      if(tile.food>3){this._harvest(tile,sim);return;}
+      if(!this.target)this.target=sim.findTile(this.x,this.y,25,t=>t.food>6||(t.building&&t.building.type==='ranch'));
+      this._moveTo(sim,this.target);
+      if(!this.target)this.state='wander';return;
+    }
+
+    if(this.state==='build'){
+      if(this.inv.wood>=8||this.inv.stone>=8||this.inv.iron>=5){
+        if(!this.target)this.target=sim.findTile(this.x,this.y,5,t=>!t.agent&&!t.building&&t.type!=='water'&&t.type!=='mountain');
+        if(this.target){
+          this._moveTo(sim,this.target);
+          if(this.x===this.target.x&&this.y===this.target.y){this._constructBuilding(sim,tile);this.target=null;}
+        }else this.state='gather';
+      }else this.state='gather';
+      return;
+    }
+
+    if(this.state==='trade'){
+      if(!this.targetAgent||!this.targetAgent.alive)
+        this.targetAgent=sim.findAgent(this,18,a=>a.tribe!==this.tribe&&a.inv.food>5&&a.dna.agreeableness>0.3&&a.stage!=='infant');
+      if(this.targetAgent){
+        if(dist(this,this.targetAgent)<=1){this._trade(sim);return;}
+        this._moveToAgent(sim,this.targetAgent);
+      }else this.state='wander';
+      return;
+    }
+
+    if(this.state==='attack'){
+      if(this.stage==='infant'||this.stage==='child'){this.state='wander';return;}
+      if(!this.targetAgent||!this.targetAgent.alive)
+        this.targetAgent=sim.findAgent(this,12,a=>a.tribe!==this.tribe&&sim.getDiplomacy(this.tribe,a.tribe)==='war');
+      if(!this.targetAgent&&this.dna.aggression>0.65)
+        this.targetAgent=sim.findAgent(this,7,a=>a.tribe!==this.tribe&&a.stage!=='elder');
+      if(this.targetAgent){
+        if(dist(this,this.targetAgent)<=1){this._attack(sim);return;}
+        this._moveToAgent(sim,this.targetAgent);
+      }else this.state='wander';
+      return;
+    }
+
+    if(this.state==='socialize'){
+      const fr=sim.findAgent(this,6,a=>a.tribe===this.tribe&&a.stage!=='infant');
+      if(fr){
+        this._moveToAgent(sim,fr);
+        if(dist(this,fr)<=1){
+          this.social=clamp(this.social+9,0,100);fr.social=clamp(fr.social+7,0,100);
+          this.happiness=clamp(this.happiness+2,0,100);this.state='wander';
+        }
+      }else this.state='wander';
+      return;
+    }
+
+    if(Math.random()<0.6)this._randMove(sim);
+  }
+
+  _harvest(tile,sim){
+    const civ=sim.civs[this.tribe.name];
+    const farmSkill=civ&&civ.hasTech('basic_farming')?1.3:1;
+    const gain=clamp(Math.floor((3+this.skills.foraging*8)*farmSkill),1,Math.ceil(tile.food));
+    tile.food=Math.max(0,tile.food-gain);
+    this.inv.food=Math.min(80,this.inv.food+gain);
+    if(tile.wood>2){const wg=clamp(2,1,Math.ceil(tile.wood));tile.wood=Math.max(0,tile.wood-wg);this.inv.wood=Math.min(60,this.inv.wood+wg);}
+    if(tile.stone>1&&this.tools>0){const sg=clamp(2,1,Math.ceil(tile.stone));tile.stone=Math.max(0,tile.stone-sg);this.inv.stone=Math.min(50,this.inv.stone+sg);}
+    if(tile.iron>1&&civ&&civ.hasTech('iron_smelting')){const ig=clamp(1,1,Math.ceil(tile.iron));tile.iron=Math.max(0,tile.iron-ig);this.inv.iron=Math.min(40,this.inv.iron+ig);}
+    if(tile.goldOre>0&&civ&&civ.hasTech('coinage')){tile.goldOre=Math.max(0,tile.goldOre-0.5);this.inv.gold=Math.min(30,this.inv.gold+0.5);}
+    // Gather herbs for healer
+    if(this.profession==='healer'&&tile.type==='forest'&&Math.random()<0.1)this.inv.medicine=Math.min(10,this.inv.medicine+1);
+    this.skills.foraging=Math.min(1,this.skills.foraging+0.0001);
+    if(tile.food<=0&&tile.type==='forest')tile.type='plains';
+    if(tile.food<=0&&tile.type==='jungle')tile.type='plains';
+    this.target=null;
+  }
+
+  _constructBuilding(sim,tile){
+    const civ=sim.civs[this.tribe.name];
+    if(!civ)return;
+    const w=this.inv.wood,s=this.inv.stone,ir=this.inv.iron;
+    let bt=null;
+    // Priority order based on needs and available techs
+    if(w>=5&&!sim.getBuildingOnTile(this.x,this.y,'campfire')&&civ.era===0)bt='campfire';
+    else if(w>=15&&s>=5&&!sim.getBuildingOnTile(this.x,this.y,'hut'))bt='hut';
+    else if(w>=8&&tile.type!=='water'&&!sim.getBuildingOnTile(this.x,this.y,'farm')&&civ.hasTech('basic_farming'))bt='farm';
+    else if(w>=5&&s>=10&&!sim.getBuildingOnTile(this.x,this.y,'well'))bt='well';
+    else if(w>=12&&!sim.getBuildingOnTile(this.x,this.y,'ranch')&&civ.hasTech('animal_taming'))bt='ranch';
+    else if(w>=20&&s>=15&&civ.canBuild('tower'))bt='tower';
+    else if(w>=10&&s>=20&&civ.canBuild('forge')&&civ.hasTech('bronze_working'))bt='forge';
+    else if(s>=30&&w>=5&&civ.canBuild('wall')&&civ.hasTech('masonry'))bt='wall';
+    else if(w>=20&&s>=20&&civ.canBuild('library')&&civ.hasTech('writing'))bt='library';
+    else if(ir>=25&&w>=15&&civ.canBuild('blacksmith')&&civ.hasTech('iron_smelting'))bt='blacksmith';
+    else if(w>=25&&s>=10&&civ.canBuild('stable')&&civ.hasTech('horseback'))bt='stable';
+    else if(w>=20&&s>=30&&civ.canBuild('hospital')&&civ.hasTech('medicine'))bt='hospital';
+    else if(w>=20&&s>=15&&civ.canBuild('market')&&civ.hasTech('coinage'))bt='market';
+    else if(w>=30&&s>=40&&civ.canBuild('academy')&&civ.hasTech('philosophy'))bt='academy';
+    else if(w>=15&&s>=50&&civ.canBuild('aqueduct')&&civ.hasTech('aqueducts'))bt='aqueduct';
+    else if(w>=10&&s>=80&&civ.canBuild('monument')&&civ.hasTech('architecture'))bt='monument';
+    else if(w>=40&&s>=100&&civ.canBuild('castle')&&civ.hasTech('feudalism'))bt='castle';
+    else if(w>=50&&s>=120&&civ.canBuild('cathedral')&&civ.hasTech('theology'))bt='cathedral';
+    else if(w>=30&&s>=60&&civ.canBuild('observatory')&&civ.hasTech('astronomy'))bt='observatory';
+    else if(w>=30&&s>=40&&civ.canBuild('bank')&&civ.hasTech('banking'))bt='bank';
+    else if(w>=60&&s>=80&&civ.canBuild('factory')&&civ.hasTech('steam_engine'))bt='factory';
+    else if(w>=40&&s>=60&&civ.canBuild('laboratory')&&civ.hasTech('chemistry'))bt='laboratory';
+    else if(s>=20&&w>=20&&Math.random()<0.25)bt='shrine';
+    else if(s>=30&&w>=20&&civ.canBuild('harbor')&&civ.hasTech('sailing'))bt='harbor';
+
+    if(!bt)return;
+    const def=BLDGS[bt];
+    if(!def)return;
+    const cost=def.cost;
+    if(this.inv.wood>=(cost.wood||0)&&this.inv.stone>=(cost.stone||0)&&this.inv.iron>=(cost.iron||0)){
+      this.inv.wood-=cost.wood||0;this.inv.stone-=cost.stone||0;this.inv.iron-=cost.iron||0;
+      sim.grid[this.y][this.x].building={type:bt,tribe:this.tribe,hp:100};
+      sim.buildings.push({type:bt,x:this.x,y:this.y,tribe:this.tribe});
+      sim.totalBuildings++;this.totalBuilt++;
+      this.addLife(`Built a ${def.name}`);
+      sim.logLife(`${this.name} (${this.tribe.name}) built a ${def.name}`,'build');
+      this.cooldown=80;this.skills.building=Math.min(1,this.skills.building+0.01);
+      // generate culture/morale
+      if(civ){civ.culture+=5;civ.morale=clamp(civ.morale+2,0,100);}
+    }
+  }
+
+  _trade(sim){
+    const b=this.targetAgent;if(!b||!b.alive)return;
+    const civ=sim.civs[this.tribe.name];
+    const tradeBonus=civ&&civ.hasTech('coinage')?1.3:1;
+    const gf=Math.min(6,Math.floor(this.inv.food/4));
+    const gw=Math.min(5,b.inv.wood);const gs=Math.min(3,b.inv.stone);const gi=Math.min(2,b.inv.iron);
+    if(gf>0&&(gw>0||gs>0||gi>0||b.inv.gold>0)){
+      this.inv.food-=gf;b.inv.food+=Math.floor(gf*0.85);
+      this.inv.wood+=gw;b.inv.wood=Math.max(0,b.inv.wood-gw);
+      this.inv.stone+=gs;b.inv.stone=Math.max(0,b.inv.stone-gs);
+      this.inv.iron+=gi;b.inv.iron=Math.max(0,b.inv.iron-gi);
+      // Gold exchange
+      const goldExchange=Math.min(2,b.inv.gold);this.inv.gold+=goldExchange*tradeBonus;b.inv.gold-=goldExchange;
+      if(civ)civ.gold+=goldExchange*tradeBonus;
+      sim.totalTrades++;this.totalTrades++;b.totalTrades++;
+      this.skills.trading=Math.min(1,this.skills.trading+0.002);
+      sim.improveDiplomacy(this.tribe,b.tribe);
+      sim.logWorld(`${this.name}(${this.tribe.name}) ↔ ${b.name}(${b.tribe.name}) traded goods`,'trade');
+    }
+    this.targetAgent=null;this.state='wander';this.cooldown=40;
+  }
+
+  _attack(sim){
+    const b=this.targetAgent;if(!b||!b.alive)return;
+    const civ=sim.civs[this.tribe.name];
+    const bCiv=sim.civs[b.tribe.name];
+    let myP=0.25+this.skills.fighting*0.75*(this.inv.tools>0?1.2:1);
+    let thP=0.25+b.skills.fighting*0.75*(b.inv.tools>0?1.2:1);
+    // Tech bonuses
+    if(civ&&civ.hasTech('iron_smelting'))myP*=1.25;
+    if(civ&&civ.hasTech('steel'))myP*=1.4;
+    if(civ&&civ.hasTech('gunpowder'))myP*=1.8;
+    if(civ&&civ.hasTech('siege_weapons'))myP*=1.15;
+    if(bCiv&&bCiv.hasTech('iron_smelting'))thP*=1.25;
+    if(bCiv&&bCiv.hasTech('steel'))thP*=1.4;
+    // Wall defense
+    if(sim.hasBuilding(b.x,b.y,'wall',2))thP*=1.3;
+    if(sim.hasBuilding(b.x,b.y,'castle',6))thP*=1.6;
+    const win=Math.random()<myP/(myP+thP);
+    sim.totalWars++;
+    if(win){
+      const loot=Math.min(b.inv.food,rand(3,12));
+      this.inv.food=Math.min(80,this.inv.food+loot);b.inv.food-=loot;
+      const ironLoot=Math.min(b.inv.iron,rand(0,4));this.inv.iron+=ironLoot;b.inv.iron-=ironLoot;
+      b.hunger=clamp(b.hunger+30,0,100);b.fatigue=clamp(b.fatigue+25,0,100);b.health=clamp(b.health-20,0,100);
+      this.skills.fighting=Math.min(1,this.skills.fighting+0.006);
+      sim.worsenDiplomacy(this.tribe,b.tribe);
+      sim.logWorld(`${this.name}(${this.tribe.name}) raided ${b.name}(${b.tribe.name}) — ${loot} food seized`,'war');
+      if(b.health<=0||b.hunger>=98){b.die(sim,'killed in battle');this.totalKills++;this.addLife(`Slew ${b.name} in battle`);}
+    }else{
+      this.hunger=clamp(this.hunger+14,0,100);this.health=clamp(this.health-10,0,100);
+      sim.logWorld(`${this.name}(${this.tribe.name}) attack on ${b.name}(${b.tribe.name}) repelled`,'war');
+    }
+    this.targetAgent=null;this.state='wander';this.cooldown=60;
+  }
+
+  die(sim,reason){
+    this.alive=false;
+    const tile=sim.grid[this.y]?.[this.x];
+    if(tile){tile.food+=Math.floor(this.inv.food*0.4);tile.agent=null;}
+    sim.totalDied++;
+    const age=Math.floor(this.age/50);
+    this.addLife(`Died: ${reason} at age ${age}yr`);
+    sim.logLife(`${this.name} (${this.tribe.name}, ${this.stage}, age ${age}yr) — ${reason}. Trades:${this.totalTrades} Kills:${this.totalKills} Built:${this.totalBuilt}`,'death');
+    sim.chronicle.push({name:this.name,tribe:this.tribe.name,age,reason,tick:sim.tick,profession:this.profession,generation:this.generation,children:this.children.length,kills:this.totalKills,trades:this.totalTrades,built:this.totalBuilt,researched:this.totalResearched});
+  }
+
+  _moveTo(sim,t){if(!t){this._randMove(sim);return;}let dx=0,dy=0;if(t.x!==this.x)dx=t.x>this.x?1:-1;else if(t.y!==this.y)dy=t.y>this.y?1:-1;if(!this._try(sim,this.x+dx,this.y+dy)){const j=[[0,1],[0,-1],[1,0],[-1,0]].sort(()=>Math.random()-0.5);for(const[a,b]of j)if(this._try(sim,this.x+a,this.y+b))break;}}
+  _moveToAgent(sim,a){this._moveTo(sim,{x:a.x,y:a.y});}
+  _randMove(sim){const d=[[0,1],[0,-1],[1,0],[-1,0]].sort(()=>Math.random()-0.5);for(const[dx,dy]of d)if(this._try(sim,this.x+dx,this.y+dy))return;}
+  _try(sim,nx,ny){
+    if(nx<0||nx>=GW||ny<0||ny>=GH)return false;
+    const t=sim.grid[ny][nx];
+    if(t.type==='mountain')return false;
+    // Can sail on water with sailing tech
+    const civ=sim.civs[this.tribe.name];
+    if(t.type==='water'&&!(civ&&civ.hasTech('sailing')))return false;
+    if(t.agent&&t.agent!==this)return false;
+    if(sim.grid[this.y][this.x].agent===this)sim.grid[this.y][this.x].agent=null;
+    this.x=nx;this.y=ny;t.agent=this;
+    this.fatigue=clamp(this.fatigue+0.22,0,100);
+    return true;
+  }
+}
+
+// ════════════════════════════════════════════════════════════
+//  SIMULATION
+// ════════════════════════════════════════════════════════════
+class Simulation{
+  constructor(){
+    this.canvas=document.getElementById('simCanvas');
+    this.ctx=this.canvas.getContext('2d');
+    this.grid=[];this.agents=[];this.buildings=[];
+    this.civs={};  // tribe.name -> Civilization
+    this.tick=0;this.year=0;this.seasonIdx=0;this.seasonTick=0;
+    this.running=true;this.speed=5;this.reproductionRate=1;
+    this.totalBorn=0;this.totalDied=0;this.totalTrades=0;this.totalWars=0;
+    this.totalBuildings=0;this.totalDiscoveries=0;
+    this.popHistory=[];this.techHistory=[];this.chronicle=[];this.diplomacy={};
+    this.selectedAgent=null;
+    this.discoveredCount=0;
+    this.eraOverlayTimer=0;
+    this.globalMaxEra=0;
+    this._initCivs();
+    this._initDiplomacy();
+    this._build();
+    this._spawnInitial(50);
+    this._setupCanvas();
+    this._bindUI();
+    this._loop();
+  }
+
+  _initCivs(){for(const t of TRIBES)this.civs[t.name]=new Civilization(t);}
+
+  _initDiplomacy(){for(let i=0;i<TRIBES.length;i++)for(let j=i+1;j<TRIBES.length;j++){const k=this._dk(TRIBES[i],TRIBES[j]);this.diplomacy[k]='neutral';}}
+  _dk(a,b){const[x,y]=[a.name,b.name].sort();return x+'_'+y;}
+  getDiplomacy(a,b){return a===b?'self':this.diplomacy[this._dk(a,b)]||'neutral';}
+  improveDiplomacy(a,b){if(a===b)return;const k=this._dk(a,b);const c=this.diplomacy[k]||'neutral';if(c==='neutral')this.diplomacy[k]='trade';else if(c==='war')this.diplomacy[k]='neutral';else if(c==='trade')this.diplomacy[k]='ally';}
+  worsenDiplomacy(a,b){if(a===b)return;const k=this._dk(a,b);const c=this.diplomacy[k]||'neutral';if(c==='ally')this.diplomacy[k]='neutral';else if(c==='neutral')this.diplomacy[k]='war';else if(c==='trade')this.diplomacy[k]='neutral';}
+
+  _build(){
+    this.grid=[];
+    for(let y=0;y<GH;y++){const row=[];for(let x=0;x<GW;x++)row.push(new Tile(x,y));this.grid.push(row);}
+    // Cellular smoothing passes
+    for(let p=0;p<5;p++){
+      for(let y=1;y<GH-1;y++)for(let x=1;x<GW-1;x++){
+        const nbrs=[this.grid[y-1][x],this.grid[y+1][x],this.grid[y][x-1],this.grid[y][x+1]];
+        const cnt={};nbrs.forEach(t=>cnt[t.type]=(cnt[t.type]||0)+1);
+        const maj=Object.keys(cnt).reduce((a,b)=>cnt[a]>cnt[b]?a:b);
+        if(Math.random()<0.3){
+          const t=this.grid[y][x];t.type=maj;
+          t.food=t.mxF=t.type==='forest'?rand(60,130):t.type==='plains'?rand(15,55):t.type==='jungle'?rand(80,150):t.type==='tundra'?rand(0,10):0;
+          t.wood=t.mxW=t.type==='forest'?rand(40,90):t.type==='jungle'?rand(60,120):0;
+          t.stone=t.mxS=t.type==='mountain'?rand(80,160):0;
+          t.iron=t.mxI=t.type==='mountain'?rand(0,40):0;
+        }
+      }
+    }
+    // Rivers: carve water paths
+    for(let r=0;r<3;r++){
+      let x=rand(0,GW-1),y=0;
+      for(let step=0;step<GH*1.5;step++){
+        if(y>=GH)break;
+        this.grid[clamp(y,0,GH-1)][clamp(x,0,GW-1)].type='water';
+        x+=rand(-2,2);y+=rand(0,2);
+        x=clamp(x,0,GW-1);y=clamp(y,0,GH-1);
+      }
+    }
+    // Mark starting discovered tiles for each tribe spawn area
+  }
+
+  _spawnInitial(n){
+    _aid=0;this.agents=[];this.buildings=[];
+    for(let i=0;i<n;i++){
+      let x,y,tile,tries=0;
+      do{x=rand(3,GW-4);y=rand(3,GH-4);tile=this.grid[y][x];tries++;}
+      while((tile.type==='water'||tile.type==='mountain'||tile.agent)&&tries<300);
+      if(tries>=300)continue;
+      const tribe=TRIBES[i%TRIBES.length];
+      const a=new Agent(x,y,tribe);
+      const r=Math.random();
+      if(r<0.15)a.age=rand(0,100);
+      else if(r<0.35)a.age=rand(101,600);
+      else if(r<0.55)a.age=rand(601,900);
+      else if(r<0.85)a.age=rand(901,2250);
+      else a.age=rand(2251,3000);
+      a.stage=a.lifeStageName;
+      if(a.stage==='adult')a._assignProfession(this);
+      tile.agent=a;tile.discovered=true;this.agents.push(a);
+    }
+    // give each tribe starting knowledge (fire)
+    for(const name in this.civs){this.civs[name].addKnowledge(20);}
+  }
+
+  _setupCanvas(){
+    this.canvas.width=GW*TS;this.canvas.height=GH*TS;
+    const wrap=document.getElementById('canvas-wrap');
+    const sx=wrap.clientWidth/(GW*TS),sy=wrap.clientHeight/(GH*TS);
+    const s=Math.min(sx,sy,1.2);
+    this.canvas.style.width=(GW*TS*s)+'px';this.canvas.style.height=(GH*TS*s)+'px';this._scale=s;
+  }
+
+  hasBuilding(x,y,type,radius){for(const b of this.buildings){if(b.type===type&&Math.abs(b.x-x)+Math.abs(b.y-y)<=radius)return true;}return false;}
+  getBuildingOnTile(x,y,type){return this.buildings.find(b=>b.x===x&&b.y===y&&(!type||b.type===type))||null;}
+  findTile(sx,sy,range,pred){let best=null,bd=Infinity;const x0=Math.max(0,sx-range),x1=Math.min(GW-1,sx+range);const y0=Math.max(0,sy-range),y1=Math.min(GH-1,sy+range);for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++){const t=this.grid[y][x];if(pred(t)){const d=Math.abs(x-sx)+Math.abs(y-sy);if(d<bd){bd=d;best=t;}}}return best;}
+  findAgent(from,range,pred){let best=null,bd=Infinity;for(const a of this.agents){if(!a.alive||a===from)continue;const d=dist(from,a);if(d<=range&&pred(a)&&d<bd){bd=d;best=a;}}return best;}
+  emptyAdj(x,y){const dirs=[[0,1],[1,0],[0,-1],[-1,0],[1,1],[-1,1],[1,-1],[-1,-1]].sort(()=>Math.random()-0.5);for(const[dx,dy]of dirs){const nx=x+dx,ny=y+dy;if(nx>=0&&nx<GW&&ny>=0&&ny<GH){const t=this.grid[ny][nx];if(!t.agent&&t.type!=='water'&&t.type!=='mountain')return{x:nx,y:ny};}}return null;}
+
+  showEraMessage(msg){
+    const el=document.getElementById('eraOverlay');
+    el.textContent='⟁ '+msg;el.style.display='block';
+    this.eraOverlayTimer=180;
+  }
+
+  update(){
+    for(let s=0;s<this.speed;s++){
+      this.tick++;this.seasonTick++;
+      if(this.eraOverlayTimer>0){this.eraOverlayTimer--;if(this.eraOverlayTimer===0)document.getElementById('eraOverlay').style.display='none';}
+
+      if(this.seasonTick>=SLEN){
+        this.seasonTick=0;this.seasonIdx=(this.seasonIdx+1)%4;
+        if(this.seasonIdx===0)this.year++;
+        this.logWorld(`Season → ${SEASONS[this.seasonIdx]}`,'event');
+      }
+
+      // Global tech points from scholars + libraries
+      const globalTech=Math.max(...Object.values(this.civs).map(c=>c.techCount),0);
+      if(this.tick%10===0)for(let y=0;y<GH;y++)for(let x=0;x<GW;x++)this.grid[y][x].regen(SEASONS[this.seasonIdx],globalTech);
+
+      // Research for each civ
+      if(this.tick%50===0){
+        for(const name in this.civs){
+          this.civs[name].tryResearch(this);
+          // Morale decay
+          this.civs[name].morale=clamp(this.civs[name].morale-0.5,0,100);
+        }
+        this.popHistory.push(this.agents.length);
+        this.techHistory.push(globalTech);
+        this._carryingCapacity();
+      }
+      if(this.popHistory.length>150)this.popHistory.shift();
+      if(this.techHistory.length>150)this.techHistory.shift();
+
+      const snap=[...this.agents];
+      for(const a of snap)if(a.alive)a.update(this);
+      this.agents=this.agents.filter(a=>a.alive);
+
+      if(this.tick%600===0)this._worldEvent();
+      if(this.tick%900===0)this._diplomacyEvent();
+      if(this.tick%1200===0)this._tradeEvent();
+    }
+    this._updateUI();
+  }
+
+  _carryingCapacity(){
+    let tf=0;for(let y=0;y<GH;y++)for(let x=0;x<GW;x++)tf+=this.grid[y][x].food;
+    const cap=Math.floor(tf/22);
+    if(this.agents.length>cap){
+      const excess=this.agents.length-cap;
+      const db=Math.min(0.08,excess/cap*0.04);
+      this.agents.forEach(a=>{a.hunger+=db;});
+    }
+  }
+
+  _worldEvent(){
+    const evts=[
+      ()=>{this.logWorld('⚡ Great drought — forests wither, famine spreads','event');for(let y=0;y<GH;y++)for(let x=0;x<GW;x++){const t=this.grid[y][x];t.food=Math.max(0,t.food*0.3);if(t.type==='forest'&&Math.random()<0.2)t.type='plains';}},
+      ()=>{this.logWorld('🌧 Monsoon rains — land rejuvenated, rivers overflow','event');for(let y=0;y<GH;y++)for(let x=0;x<GW;x++){const t=this.grid[y][x];t.food=Math.min(t.mxF,t.food*1.9);if(t.type==='plains'&&Math.random()<0.12){t.type='forest';t.mxF=80;t.food=60;t.mxW=50;t.wood=35;}}},
+      ()=>{const pct=rand(12,25);this.logWorld(`🦠 Plague spreads — ${pct}% mortality (hospitals reduce impact)`,'event');const hospitalized=this.buildings.some(b=>b.type==='hospital');this.agents.filter(()=>Math.random()<pct/100*(hospitalized?0.4:1)).forEach(a=>{a.diseased=true;a.diseaseTimer=rand(150,400);a.health=clamp(a.health-30,0,100);});},
+      ()=>{this.logWorld('💎 Rich mineral deposits discovered in mountains','event');for(let y=0;y<GH;y++)for(let x=0;x<GW;x++){const t=this.grid[y][x];if(t.type==='mountain'){t.stone=Math.min(t.mxS,t.stone+90);t.iron=Math.min(t.mxI,t.iron+60);t.goldOre=Math.min(t.mxG,t.goldOre+20);}}},
+      ()=>{this.logWorld('🌋 Volcanic eruption — mountains enrich soil','event');for(let y=0;y<GH;y++)for(let x=0;x<GW;x++){const t=this.grid[y][x];if(t.type==='plains'&&Math.random()<0.08){t.fertility=Math.min(1.5,t.fertility+0.3);}}},
+      ()=>{this.logWorld('🌪 Wildfire — forests and plains scorched','event');for(let y=0;y<GH;y++)for(let x=0;x<GW;x++){const t=this.grid[y][x];if((t.type==='forest'||t.type==='jungle')&&Math.random()<0.3){t.type='plains';t.food*=0.15;t.wood=0;}}},
+      ()=>{this.logWorld('🌟 Golden Age of Prosperity — all tribes flourish','event');this.agents.forEach(a=>{a.hunger=clamp(a.hunger-25,0,100);a.health=clamp(a.health+15,0,100);a.inv.food+=10;});for(const n in this.civs){this.civs[n].morale=clamp(this.civs[n].morale+20,0,100);}},
+      ()=>{this.logWorld('🌊 Great flood — coastal plains submerged','event');for(let y=GH-8;y<GH;y++)for(let x=0;x<GW;x++){const t=this.grid[y][x];if(t.type==='plains'&&Math.random()<0.15)t.type='water';}},
+      ()=>{this.logWorld('💡 Collective knowledge surge — all civs gain research','event');for(const n in this.civs){this.civs[n].addKnowledge(rand(30,80));}},
+      ()=>{this.logWorld('🏺 Ancient artifacts discovered — cultural renaissance','event');for(const n in this.civs){this.civs[n].culture+=20;this.civs[n].morale=clamp(this.civs[n].morale+15,0,100);}},
+      ()=>{const pct=rand(5,15);this.logWorld(`⚔ Raider bands attack settlements — ${pct}% pop threatened`,'event');this.agents.filter(a=>a.stage!=='infant'&&a.stage!=='elder').filter(()=>Math.random()<pct/100).forEach(a=>{a.hunger=clamp(a.hunger+20,0,100);a.inv.food=Math.max(0,a.inv.food-5);});},
+      ()=>{this.logWorld('🌾 Miracle harvest — food triples across all plains','event');for(let y=0;y<GH;y++)for(let x=0;x<GW;x++){const t=this.grid[y][x];if(t.type==='plains'||t.type==='forest')t.food=Math.min(t.mxF,t.food*3);}},
+    ];
+    pick(evts)();
+  }
+
+  _diplomacyEvent(){
+    if(TRIBES.length<2)return;
+    const pairs=[];for(let i=0;i<TRIBES.length;i++)for(let j=i+1;j<TRIBES.length;j++)pairs.push([TRIBES[i],TRIBES[j]]);
+    const[a,b]=pick(pairs);
+    const d=this.getDiplomacy(a,b),r=Math.random();
+    if(d==='neutral'&&r<0.28){this.diplomacy[this._dk(a,b)]='ally';this.logWorld(`🤝 ${a.name} and ${b.name} forge an alliance`,'diplo');for(const n of[a.name,b.name]){this.civs[n].morale=clamp(this.civs[n].morale+10,0,100);}}
+    else if(d==='neutral'&&r>0.78){this.diplomacy[this._dk(a,b)]='war';this.logWorld(`⚔ ${a.name} declares war on ${b.name}`,'diplo');}
+    else if(d==='war'&&r<0.28){this.diplomacy[this._dk(a,b)]='neutral';this.logWorld(`🕊 ${a.name} and ${b.name} sign a peace treaty`,'diplo');}
+    else if(d==='ally'&&r>0.88){this.diplomacy[this._dk(a,b)]='neutral';this.logWorld(`💔 Alliance between ${a.name} and ${b.name} collapses`,'diplo');}
+    else if(d==='trade'){this.diplomacy[this._dk(a,b)]='ally';this.logWorld(`📜 Trade pact ${a.name}↔${b.name} elevates to full alliance`,'diplo');}
+  }
+
+  _tradeEvent(){
+    // Knowledge sharing between allied civs
+    const pairs=[];for(let i=0;i<TRIBES.length;i++)for(let j=i+1;j<TRIBES.length;j++){const[a,b]=[TRIBES[i],TRIBES[j]];if(this.getDiplomacy(a,b)==='ally')pairs.push([a,b]);}
+    for(const[a,b]of pairs){
+      const ca=this.civs[a.name],cb=this.civs[b.name];
+      if(!ca||!cb)continue;
+      // share a random tech
+      const aTechs=[...ca.techs].filter(t=>!cb.techs.has(t));
+      const bTechs=[...cb.techs].filter(t=>!ca.techs.has(t));
+      if(aTechs.length&&Math.random()<0.3){const t=pick(aTechs);cb.techs.add(t);this.logWorld(`📖 ${b.name} learned ${TECH_TREE[t].name} from ${a.name} (ally knowledge sharing)`,'diplo');}
+      if(bTechs.length&&Math.random()<0.3){const t=pick(bTechs);ca.techs.add(t);this.logWorld(`📖 ${a.name} learned ${TECH_TREE[t].name} from ${b.name} (ally knowledge sharing)`,'diplo');}
+    }
+  }
+
+  draw(){
+    const ctx=this.ctx;
+    const TC={plains:'#182214',forest:'#1a3d1a',mountain:'#2e2c28',water:'#091830',desert:'#2e2618',jungle:'#143d10',tundra:'#1e2530'};
+    for(let y=0;y<GH;y++){
+      for(let x=0;x<GW;x++){
+        const t=this.grid[y][x];
+        const px=x*TS,py=y*TS;
+        // Fog of war — undiscovered tiles are darker
+        if(!t.discovered){ctx.fillStyle='#030508';ctx.fillRect(px,py,TS,TS);continue;}
+        ctx.fillStyle=TC[t.type]||'#111';ctx.fillRect(px,py,TS,TS);
+
+        // Discovery site marker
+        if(t.discoveryType&&!t.agent){ctx.fillStyle='rgba(240,192,64,0.3)';ctx.fillRect(px,py,TS,TS);}
+
+        if(!t.agent){
+          if(t.pollution>3){ctx.fillStyle=`rgba(100,80,50,${Math.min(0.5,t.pollution*0.05)})`;ctx.fillRect(px,py,TS,TS);}
+          if(t.food>15&&t.type!=='mountain'&&t.type!=='water'){
+            const i=Math.min(1,t.food/(t.mxF||60));
+            ctx.fillStyle=`rgba(60,${100+Math.floor(i*120)},50,${0.3+i*0.4})`;ctx.fillRect(px+2,py+2,TS-4,TS-4);
+          }
+          if(t.iron>10){ctx.fillStyle='rgba(160,180,200,0.4)';ctx.fillRect(px+3,py+3,TS-6,TS-6);}
+          else if(t.stone>20){ctx.fillStyle='rgba(120,110,90,0.45)';ctx.fillRect(px+3,py+3,TS-6,TS-6);}
+          if(t.goldOre>5){ctx.fillStyle='rgba(240,200,60,0.5)';ctx.fillRect(px+4,py+4,TS-8,TS-8);}
+          if(t.type==='water'){const wave=(this.tick/30+x*0.3+y*0.2)%1;ctx.fillStyle=`rgba(20,70,150,${0.25+wave*0.12})`;ctx.fillRect(px,py,TS,TS);}
+        }
+
+        // Building
+        if(t.building){
+          const def=BLDGS[t.building.type];
+          const bc=t.building.tribe.color;
+          // Era-based building colour intensity
+          const civ=this.civs[t.building.tribe.name];
+          const intensity=civ?0.35+civ.era*0.05:0.45;
+          ctx.fillStyle=bc;ctx.globalAlpha=intensity;ctx.fillRect(px+1,py+1,TS-2,TS-2);ctx.globalAlpha=1;
+          ctx.strokeStyle=bc;ctx.lineWidth=1;ctx.strokeRect(px+1,py+1,TS-2,TS-2);
+        }
+      }
+    }
+
+    // Agents
+    for(const a of this.agents){
+      const px=a.x*TS+TS/2,py=a.y*TS+TS/2,r=TS/2-1;
+      const sel=(a===this.selectedAgent);
+      if(sel){ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.globalAlpha=0.9;ctx.beginPath();ctx.arc(px,py,r+2.5,0,Math.PI*2);ctx.stroke();ctx.globalAlpha=1;}
+      ctx.strokeStyle=a.tribe.color;ctx.lineWidth=1;ctx.globalAlpha=0.3;ctx.beginPath();ctx.arc(px,py,r+1,0,Math.PI*2);ctx.stroke();ctx.globalAlpha=1;
+      const ea=clamp(0.45+a.health/200+a.inv.food/60,0.2,0.95);
+      ctx.fillStyle=a.tribe.color;ctx.globalAlpha=ea;ctx.beginPath();ctx.arc(px,py,r,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;
+
+      // State dot (profession colours)
+      const ProfColor={scholar:'#f0c040',healer:'#40e878',warrior:'#f04040',trader:'#40d8e8',builder:'#4090f0',farmer:'#80d040',explorer:'#f080f0'};
+      const StateColor={seek_food:'#f0c040',seek_water:'#40d8e8',attack:'#f04040',trade:'#40e878',build:'#4090f0',rest:'#888',seek_mate:'#ff69b4',heal:'#80ffa0',explore:'#f080f0'};
+      const dotColor=StateColor[a.state]||ProfColor[a.profession]||'#888';
+      ctx.fillStyle=dotColor;ctx.beginPath();ctx.arc(px+r-0.5,py-r+0.5,1.6,0,Math.PI*2);ctx.fill();
+
+      if(a.isPregnant){ctx.fillStyle='#ffc0cb';ctx.beginPath();ctx.arc(px-r+1.5,py-r+1.5,2,0,Math.PI*2);ctx.fill();}
+      if(a.diseased){ctx.fillStyle='rgba(100,220,100,0.7)';ctx.beginPath();ctx.arc(px,py+r-1,1.5,0,Math.PI*2);ctx.fill();}
+      if(a.stage==='infant'){ctx.fillStyle='rgba(255,255,255,0.6)';ctx.beginPath();ctx.arc(px,py,r*0.45,0,Math.PI*2);ctx.fill();}
+      if(a.mate&&a.mate.alive){ctx.strokeStyle='#ff69b4';ctx.lineWidth=0.8;ctx.beginPath();ctx.arc(px,py,r+2.5,0,Math.PI*2);ctx.stroke();}
+    }
+  }
+
+  _updateUI(){
+    const alive=this.agents.length;
+    document.getElementById('sTick').textContent=this.tick;
+    document.getElementById('sYear').textContent=this.year;
+    document.getElementById('sPop').textContent=alive;
+    document.getElementById('sBorn').textContent=this.totalBorn;
+    document.getElementById('sDied').textContent=this.totalDied;
+    document.getElementById('sTrades').textContent=this.totalTrades;
+    document.getElementById('sWars').textContent=this.totalWars;
+    document.getElementById('sBuild').textContent=this.totalBuildings;
+    document.getElementById('sFamilies').textContent=families.size;
+    document.getElementById('sDisc').textContent=this.totalDiscoveries;
+
+    document.getElementById('seasName').textContent=SEASONS[this.seasonIdx];
+    document.getElementById('seasProgress').textContent=`${this.seasonTick}/${SLEN}`;
+    const maxEra=Math.max(...Object.values(this.civs).map(c=>c.era));
+    document.getElementById('climateLabel').textContent=ERAS[maxEra].name;
+    for(let i=0;i<4;i++)document.getElementById('sp'+i).classList.toggle('on',i===this.seasonIdx);
+
+    // Resources
+    let tf=0,tw=0,ts=0,ti=0,tg=0;
+    for(let y=0;y<GH;y++)for(let x=0;x<GW;x++){const t=this.grid[y][x];tf+=t.food;tw+=t.wood;ts+=t.stone;ti+=t.iron;tg+=t.goldOre;}
+    const maxR=GW*GH*80;const pct=v=>Math.round(clamp(v/maxR*100,0,100));
+    document.getElementById('rfFood').style.width=pct(tf)+'%';document.getElementById('rvFood').textContent=Math.round(tf);
+    document.getElementById('rfWood').style.width=pct(tw)+'%';document.getElementById('rvWood').textContent=Math.round(tw);
+    document.getElementById('rfStone').style.width=pct(ts)+'%';document.getElementById('rvStone').textContent=Math.round(ts);
+    document.getElementById('rfIron').style.width=pct(ti)+'%';document.getElementById('rvIron').textContent=Math.round(ti);
+    document.getElementById('rfGold').style.width=pct(tg)+'%';document.getElementById('rvGold').textContent=Math.round(tg);
+
+    // Tribes
+    const tl=document.getElementById('tribeList');
+    const mp=Math.max(1,...TRIBES.map(t=>this.agents.filter(a=>a.tribe===t).length));
+    tl.innerHTML=TRIBES.map(t=>{
+      const pop=this.agents.filter(a=>a.tribe===t).length;
+      const civ=this.civs[t.name];
+      const era=civ?ERAS[civ.era].name.split(' ')[0]:'?';
+      const w=Math.round(pop/mp*100);
+      return`<div class="tribe-row"><div class="tdot" style="background:${t.color}"></div><div class="tname">${t.name}<span style="color:var(--muted);font-size:8px"> ${era}</span></div><div class="tbar-wrap"><div class="tbar" style="background:${t.color};width:${w}%"></div></div><div class="tpop">${pop}</div></div>`;
+    }).join('');
+
+    // Diplomacy
+    const dl=document.getElementById('diploList');
+    const pairs=[];for(let i=0;i<TRIBES.length;i++)for(let j=i+1;j<TRIBES.length;j++)pairs.push([TRIBES[i],TRIBES[j]]);
+    dl.innerHTML=pairs.map(([a,b])=>{
+      const d=this.getDiplomacy(a,b);
+      const cls=d==='ally'?'dip-ally':d==='war'?'dip-war':d==='trade'?'dip-trade':'dip-neutral';
+      return`<div class="dip-row"><div class="dip-name" style="color:${a.color}">${a.name}</div><span style="color:var(--muted)">↔</span><div class="dip-name" style="color:${b.color}">${b.name}</div><div class="dip-status ${cls}">${d.toUpperCase()}</div></div>`;
+    }).join('');
+
+    // Buildings
+    const bCount={};for(const b of this.buildings)bCount[b.type]=(bCount[b.type]||0)+1;
+    document.getElementById('buildingList').innerHTML=Object.entries(bCount).sort((a,b)=>b[1]-a[1]).map(([k,v])=>{
+      const def=BLDGS[k];if(!def)return'';
+      return`<div class="bld-item" title="${def.desc}"><div class="bld-icon">${def.icon}</div><div class="bld-name">${def.name}</div><div class="bld-count">${v}</div></div>`;
+    }).join('')||'<div style="font-size:10px;color:var(--muted)">None yet</div>';
+
+    if(this.selectedAgent&&this.selectedAgent.alive)this._renderInspector(this.selectedAgent);
+    this._drawChart();
+  }
+
+  _renderInspector(a){
+    const age=Math.floor(a.age/50);
+    const civ=this.civs[a.tribe.name];
+    const needBar=(v,c)=>`<div class="need-bar"><div class="need-fill" style="width:${Math.round(v)}%;background:${c}"></div></div>`;
+    document.getElementById('inspector').innerHTML=`
+      <div class="insp-name" style="color:${a.tribe.color}">${a.name}</div>
+      <div style="font-size:10px;color:${a.tribe.color};margin-bottom:3px">${a.tribe.name} · ${a.stage} · ${a.profession} · Age ${age}yr · Gen ${a.generation}</div>
+      ${a.mate?`<div style="color:#ff69b4;font-size:9px">❤ Mate: ${a.mate.name}</div>`:''}
+      ${a.isPregnant?`<div style="color:#ff69b4;font-size:9px">🤰 Pregnant: ${Math.round(a.pregnancyProgress)}%</div>`:''}
+      ${a.diseased?`<div style="color:var(--green);font-size:9px">🦠 Diseased (${a.diseaseTimer} ticks)</div>`:''}
+      ${a.children.length>0?`<div style="color:var(--green);font-size:9px">Children: ${a.children.length}</div>`:''}
+      <div class="insp-row"><span>State</span><span>${a.state}</span></div>
+      <div class="insp-row"><span>Health ${Math.round(a.health)}%</span></div>
+      ${needBar(a.health,'var(--green)')}
+      <div class="insp-row" style="margin-top:2px"><span>Hunger ${Math.round(a.hunger)}%</span></div>
+      ${needBar(a.hunger,'var(--gold)')}
+      <div class="insp-row" style="margin-top:2px"><span>Thirst ${Math.round(a.thirst)}%</span></div>
+      ${needBar(a.thirst,'var(--blue)')}
+      <div class="insp-row" style="margin-top:2px"><span>Fatigue ${Math.round(a.fatigue)}%</span></div>
+      ${needBar(a.fatigue,'var(--orange)')}
+      <div class="insp-row" style="margin-top:3px"><span>Happiness</span><span>${Math.round(a.happiness)}%</span></div>
+      <div class="insp-row"><span>Skills</span><span style="color:var(--muted)">f:${a.skills.foraging.toFixed(2)} b:${a.skills.building.toFixed(2)} s:${a.skills.scholarship.toFixed(2)}</span></div>
+      <div class="inv-grid">
+        <div class="inv-item">Food <span>${Math.floor(a.inv.food)}</span></div>
+        <div class="inv-item">Wood <span>${Math.floor(a.inv.wood)}</span></div>
+        <div class="inv-item">Stone <span>${Math.floor(a.inv.stone)}</span></div>
+        <div class="inv-item">Iron <span>${Math.floor(a.inv.iron)}</span></div>
+        <div class="inv-item">Gold <span>${Math.floor(a.inv.gold)}</span></div>
+        <div class="inv-item">Med <span>${Math.floor(a.inv.medicine)}</span></div>
+      </div>
+      <div class="insp-row" style="margin-top:3px"><span>Lifetime:</span><span style="font-size:9px">Ate:${a.totalFoodEaten} Tr:${a.totalTrades} Ki:${a.totalKills} Bu:${a.totalBuilt} Re:${a.totalResearched}</span></div>
+      <div style="font-size:9px;color:var(--muted);margin-top:2px">Tribe era: ${civ?ERAS[civ.era].name:'?'} · Techs: ${civ?civ.techCount:0}</div>
+      <div class="life-mini">${a.lifeLog.slice().reverse().join('\n')}</div>`;
+  }
+
+  _drawChart(){
+    const cv=document.getElementById('pop-chart');const cctx=cv.getContext('2d');
+    cv.width=cv.offsetWidth*window.devicePixelRatio||cv.clientWidth||200;cv.height=72*window.devicePixelRatio||72;
+    cctx.scale(window.devicePixelRatio,window.devicePixelRatio);
+    const W=cv.clientWidth||200,H=cv.clientHeight||72;
+    cctx.clearRect(0,0,W,H);
+    if(this.popHistory.length<2)return;
+    const maxP=Math.max(...this.popHistory,1);
+    const maxT=Math.max(...this.techHistory,1);
+    cctx.strokeStyle='var(--border)';cctx.lineWidth=0.5;
+    for(let i=0;i<=3;i++){const y=H-i*H/3;cctx.beginPath();cctx.moveTo(0,y);cctx.lineTo(W,y);cctx.stroke();}
+    const step=W/(this.popHistory.length-1);
+    // Population area
+    cctx.beginPath();cctx.moveTo(0,H);
+    this.popHistory.forEach((v,i)=>cctx.lineTo(i*step,H-v/maxP*(H-6)));
+    cctx.lineTo((this.popHistory.length-1)*step,H);cctx.closePath();
+    cctx.fillStyle='rgba(46,196,182,0.12)';cctx.fill();
+    cctx.beginPath();this.popHistory.forEach((v,i)=>i===0?cctx.moveTo(0,H-v/maxP*(H-6)):cctx.lineTo(i*step,H-v/maxP*(H-6)));
+    cctx.strokeStyle='#2ec4b6';cctx.lineWidth=1.5;cctx.stroke();
+    // Tech level line
+    if(this.techHistory.length>1){
+      cctx.beginPath();this.techHistory.forEach((v,i)=>i===0?cctx.moveTo(0,H-v/maxT*(H-6)*0.8):cctx.lineTo(i*step,H-v/maxT*(H-6)*0.8));
+      cctx.strokeStyle='rgba(240,192,64,0.7)';cctx.lineWidth=1;cctx.stroke();
+    }
+    cctx.fillStyle='#2ec4b6';cctx.font=`${9*window.devicePixelRatio}px Share Tech Mono`;
+    cctx.fillText(`pop:${this.agents.length}`,4,10);
+    cctx.fillStyle='rgba(240,192,64,0.9)';
+    const maxEra=Math.max(...Object.values(this.civs).map(c=>c.era));
+    const totalTechs=Object.values(this.civs).reduce((s,c)=>s+c.techCount,0);
+    cctx.fillText(`tech:${totalTechs}`,W-60,10);
+  }
+
+  logLife(msg,type){const el=document.getElementById('life-log');const d=document.createElement('div');d.className=`le le-${type}`;d.textContent=`[${this.tick}] ${msg}`;el.prepend(d);while(el.children.length>100)el.removeChild(el.lastChild);}
+  logWorld(msg,type){const el=document.getElementById('event-log');const d=document.createElement('div');d.className=`le le-${type}`;d.textContent=`[${this.tick}] ${msg}`;el.prepend(d);while(el.children.length>100)el.removeChild(el.lastChild);}
+  logTech(msg,type){const el=document.getElementById('tech-log');const d=document.createElement('div');d.className=`le le-${type}`;d.textContent=`[${this.tick}] ${msg}`;el.prepend(d);while(el.children.length>100)el.removeChild(el.lastChild);}
+
+  _bindUI(){
+    document.getElementById('btnPause').onclick=()=>{this.running=!this.running;const b=document.getElementById('btnPause');b.textContent=this.running?'⏸ Pause':'▶ Resume';b.classList.toggle('on',this.running);document.getElementById('pauseOverlay').style.display=this.running?'none':'block';};
+    document.getElementById('btnStep').onclick=()=>{if(!this.running){const p=this.speed;this.speed=1;this.update();this.draw();this.speed=p;}};
+    document.getElementById('btnSpawn').onclick=()=>{for(let i=0;i<10;i++){let x,y,tile,tries=0;do{x=rand(3,GW-4);y=rand(3,GH-4);tile=this.grid[y][x];tries++;}while((tile.type==='water'||tile.type==='mountain'||tile.agent)&&tries<200);if(tries>=200)continue;const tribe=TRIBES[i%TRIBES.length];const a=new Agent(x,y,tribe);tile.agent=a;tile.discovered=true;this.agents.push(a);}this.logWorld('10 new souls arrive on the continent','event');};
+    document.getElementById('btnReset').onclick=()=>{this.agents=[];this.buildings=[];this.tick=0;this.year=0;this.seasonIdx=0;this.seasonTick=0;this.totalBorn=0;this.totalDied=0;this.totalTrades=0;this.totalWars=0;this.totalBuildings=0;this.totalDiscoveries=0;this.popHistory=[];this.techHistory=[];this.chronicle=[];_aid=0;this.selectedAgent=null;families.clear();this._initCivs();this._initDiplomacy();this._build();this._spawnInitial(50);['life-log','event-log','tech-log'].forEach(id=>document.getElementById(id).innerHTML='');document.getElementById('inspector').innerHTML='<div style="color:var(--muted);font-size:10px">Click an agent on the map</div>';this.logWorld('A new world is born','event');};
+    document.getElementById('speedSlider').oninput=e=>{this.speed=parseInt(e.target.value);document.getElementById('speedVal').textContent=this.speed+'x';};
+    document.getElementById('reproSlider').oninput=e=>{this.reproductionRate=parseFloat(e.target.value);document.getElementById('reproVal').textContent=this.reproductionRate.toFixed(1)+'x';};
+    this.canvas.addEventListener('click',e=>{const rect=this.canvas.getBoundingClientRect();const s=this._scale||1;const cx=Math.floor((e.clientX-rect.left)/s/TS);const cy=Math.floor((e.clientY-rect.top)/s/TS);if(cx>=0&&cx<GW&&cy>=0&&cy<GH){const tile=this.grid[cy][cx];this.selectedAgent=tile.agent||null;if(!tile.agent)document.getElementById('inspector').innerHTML='<div style="color:var(--muted);font-size:10px">No agent — '+tile.type+(tile.discoveryType?' | ⚡ '+DISCOVERY_TYPES[tile.discoveryType].name:'')+'</div>';}});
+    this.canvas.addEventListener('mousemove',e=>{const rect=this.canvas.getBoundingClientRect();const s=this._scale||1;const cx=Math.floor((e.clientX-rect.left)/s/TS);const cy=Math.floor((e.clientY-rect.top)/s/TS);const tt=document.getElementById('tooltip');if(cx>=0&&cx<GW&&cy>=0&&cy<GH){const t=this.grid[cy][cx];if(!t.discovered){tt.innerHTML='<i style="color:var(--muted)">Unexplored</i>';const wx=document.getElementById('canvas-wrap'),wr=wx.getBoundingClientRect();tt.style.left=(e.clientX-wr.left+12)+'px';tt.style.top=(e.clientY-wr.top+12)+'px';tt.style.display='block';return;}let html=`<b>${t.type}</b> (${cx},${cy})`;if(t.food>0)html+=`<br>🌾 food: ${Math.round(t.food)}`;if(t.wood>0)html+=`<br>🪵 wood: ${Math.round(t.wood)}`;if(t.stone>0)html+=`<br>🪨 stone: ${Math.round(t.stone)}`;if(t.iron>0)html+=`<br>⚙ iron: ${Math.round(t.iron)}`;if(t.goldOre>0)html+=`<br>💰 gold: ${Math.round(t.goldOre)}`;if(t.pollution>0)html+=`<br>💨 pollution: ${t.pollution.toFixed(1)}`;if(t.discoveryType)html+=`<br>⚡ <b style="color:var(--gold)">${DISCOVERY_TYPES[t.discoveryType].name}</b>`;if(t.building){const def=BLDGS[t.building.type];html+=`<br>${def.icon} <b>${def.name}</b> (${t.building.tribe.name})`;}if(t.agent){const a=t.agent;html+=`<br><b style="color:${a.tribe.color}">${a.name}</b> · ${a.tribe.name}<br>${a.stage} · ${a.profession} · ${a.state}<br>H:${Math.round(a.hunger)}% T:${Math.round(a.thirst)}% Hlth:${Math.round(a.health)}%`;if(a.isPregnant)html+=`<br>🤰 Pregnant`;if(a.mate)html+=`<br>❤️ ${a.mate.name}`;if(a.diseased)html+=`<br>🦠 Diseased`;}const wx=document.getElementById('canvas-wrap'),wr=wx.getBoundingClientRect();let tx=e.clientX-wr.left+12,ty=e.clientY-wr.top+12;if(tx+210>wr.width)tx-=220;tt.innerHTML=html;tt.style.left=tx+'px';tt.style.top=ty+'px';tt.style.display='block';}else tt.style.display='none';});
+    this.canvas.addEventListener('mouseleave',()=>{document.getElementById('tooltip').style.display='none';});
+    window.addEventListener('resize',()=>this._setupCanvas());
+  }
+
+  _loop(){if(this.running)this.update();this.draw();requestAnimationFrame(()=>this._loop());}
+}
+
+function switchTab(which){
+  ['life','event','tech'].forEach(t=>{
+    document.getElementById(t+'-log').style.display=which===t?'flex':'none';
+    document.getElementById('tab'+t.charAt(0).toUpperCase()+t.slice(1)).classList.toggle('on',which===t);
+  });
+}
+
+window.addEventListener('load',()=>{window.sim=new Simulation();});
+</script>
+
+<script>
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    const sim = window.sim;
+    if (!sim) return;
+
+    // ticker
+    const te = document.getElementById('tickerInner');
+    const tq = [];
+    const _lw = sim.logWorld.bind(sim);
+    sim.logWorld = function(msg, type) {
+      _lw(msg, type);
+      tq.push(msg);
+      if (tq.length > 40) tq.shift();
+      if (te) { const t = tq.slice(-12).join('   ·   '); te.textContent = t + '          ' + t; }
+    };
+
+    // timeline
+    function updateTL() {
+      const bar = document.getElementById('timelineBar');
+      if (!bar || typeof ERAS === 'undefined') return;
+      const maxEra = Math.max(...Object.values(sim.civs).map(c => c.era));
+      bar.innerHTML = ERAS.map((e, i) => {
+        const cls = i < maxEra ? 'tl-dot tl-done' : i === maxEra ? 'tl-dot tl-active' : 'tl-dot';
+        const short = e.name.replace(' Age','').replace('Renaissance','Renais.');
+        return `<div class="${cls}" title="${e.name}"><div class="tl-label">${short}</div></div>${i < ERAS.length-1 ? '<div class="tl-line"></div>' : ''}`;
+      }).join('');
+    }
+    const _se = sim.showEraMessage.bind(sim);
+    sim.showEraMessage = function(msg) {
+      _se(msg);
+      updateTL();
+      const h = document.getElementById('hdr');
+      h.style.borderBottomColor = 'rgba(184,138,40,.4)';
+      setTimeout(() => h.style.borderBottomColor = '', 2000);
+    };
+    updateTL();
+
+    // mini map
+    const mc = document.getElementById('miniMap');
+    const mx = mc ? mc.getContext('2d') : null;
+    const TC = {plains:[22,34,18],forest:[20,50,20],mountain:[42,40,36],water:[8,18,42],desert:[46,36,20],jungle:[16,48,16],tundra:[26,34,44]};
+    function drawMini() {
+      if (!mx) return;
+      const W = mc.width  = (mc.offsetWidth  || 240) * devicePixelRatio;
+      const H = mc.height = (mc.offsetHeight || 65)  * devicePixelRatio;
+      const tcx = W/GW, tcy = H/GH;
+      const img = mx.createImageData(W|0, H|0);
+      const d = img.data;
+      for (let y=0;y<GH;y++) for (let x=0;x<GW;x++) {
+        const t = sim.grid[y][x];
+        const c = TC[t.type]||[18,18,18];
+        const a = t.discovered ? 210 : 25;
+        const px=Math.floor(x*tcx),py=Math.floor(y*tcy),pw=Math.ceil(tcx),ph=Math.ceil(tcy);
+        for (let dy=0;dy<ph;dy++) for (let dx=0;dx<pw;dx++) {
+          const i=((py+dy)*(W|0)+(px+dx))*4;
+          if(i+3>=d.length)continue;
+          d[i]=c[0];d[i+1]=c[1];d[i+2]=c[2];d[i+3]=a;
+        }
+      }
+      mx.putImageData(img, 0, 0);
+      sim.agents.forEach(a => {
+        mx.fillStyle = a.tribe.color;
+        mx.fillRect((a.x/GW*W)|0,(a.y/GH*H)|0,Math.max(1,tcx|0),Math.max(1,tcy|0));
+      });
+    }
+
+    // civ panel
+    function updateCiv() {
+      const el = document.getElementById('civPanel');
+      if (!el || typeof TRIBES==='undefined') return;
+      el.innerHTML = TRIBES.map(t => {
+        const civ = sim.civs[t.name]; if (!civ) return '';
+        const rt = [...civ.techs].slice(-2).map(k=>typeof TECH_TREE!=='undefined'&&TECH_TREE[k]?TECH_TREE[k].name:k).join(', ');
+        const en = typeof ERAS!=='undefined'&&ERAS[civ.era]?ERAS[civ.era].name:'';
+        return `<div class="civ-row">
+          <div class="civ-dot" style="background:${t.color}"></div>
+          <div class="civ-body">
+            <div class="civ-name" style="color:${t.color}">${t.name}<span class="civ-era">${en}</span></div>
+            <div class="civ-br"><span>Morale</span><div class="civ-t"><div class="civ-f" style="width:${civ.morale}%;background:${t.color}"></div></div><span>${Math.round(civ.morale)}</span></div>
+            <div class="civ-br"><span>Research</span><div class="civ-t"><div class="civ-f" style="width:${Math.min(100,civ.knowledge/5)}%;background:var(--gold)"></div></div><span>${Math.round(civ.knowledge)}</span></div>
+            ${rt?`<div class="civ-techs">⚗ ${rt}</div>`:''}
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    // prof chart
+    function updateProf() {
+      const cv = document.getElementById('profChart'); if (!cv) return;
+      const ctx = cv.getContext('2d');
+      const profs = {};
+      sim.agents.forEach(a => { if(a.stage==='adult') profs[a.profession]=(profs[a.profession]||0)+1; });
+      const ent = Object.entries(profs).sort((a,b)=>b[1]-a[1]);
+      if (!ent.length) return;
+      const total = ent.reduce((s,[,v])=>s+v,0);
+      const COL = {gatherer:'#3878d8',farmer:'#28a868',warrior:'#c04040',trader:'#b88a28',builder:'#7858c8',scholar:'#18c8c0',healer:'#b87030',explorer:'#a04898'};
+      const W = cv.width  = (cv.offsetWidth  || 245) * devicePixelRatio;
+      const H = cv.height = (cv.offsetHeight || 80)  * devicePixelRatio;
+      ctx.clearRect(0,0,W,H);
+      const lw=68*devicePixelRatio, cw=24*devicePixelRatio, bw=W-lw-cw-6*devicePixelRatio;
+      const rh=(H-ent.length*2*devicePixelRatio)/ent.length;
+      ent.forEach(([p,cnt],i)=>{
+        const y=i*(rh+2*devicePixelRatio), fill=cnt/total*bw, col=COL[p]||'#666';
+        ctx.fillStyle='rgba(255,255,255,0.03)'; ctx.fillRect(lw,y,bw,rh);
+        ctx.fillStyle=col; ctx.globalAlpha=.65; ctx.fillRect(lw,y,fill,rh); ctx.globalAlpha=1;
+        ctx.fillStyle='#5878a0'; ctx.font=`${8.5*devicePixelRatio}px Consolas,monospace`; ctx.textBaseline='middle';
+        ctx.fillText(p,0,y+rh/2);
+        ctx.fillStyle=col; ctx.fillText(cnt,lw+bw+3*devicePixelRatio,y+rh/2);
+      });
+    }
+
+    // hook _updateUI
+    const _ui = sim._updateUI.bind(sim);
+    sim._updateUI = function() {
+      _ui();
+      updateCiv(); updateProf(); drawMini();
+      const d = sim.agents.length/(GW*GH)*1000;
+      const de=document.getElementById('popDensity'); if(de) de.textContent=d.toFixed(1);
+      const ke=document.getElementById('killCount');  if(ke) ke.textContent=sim.totalWars;
+      const be=document.getElementById('birthCount'); if(be) be.textContent=sim.totalBorn;
+      if(sim.agents.length){
+        const avg=Math.round(sim.agents.reduce((s,a)=>s+a.age,0)/sim.agents.length/50);
+        const ae=document.getElementById('avgAge'); if(ae) ae.textContent=avg+'yr';
+      }
+    };
+
+    // keyboard
+    document.addEventListener('keydown', e => {
+      if(e.target.tagName==='INPUT') return;
+      if(e.key===' '||e.key.toLowerCase()==='p'){ document.getElementById('btnPause').click(); e.preventDefault(); }
+      if(e.key==='+'||e.key==='='){ const s=document.getElementById('speedSlider'); s.value=Math.min(40,+s.value+1); s.dispatchEvent(new Event('input')); }
+      if(e.key==='-'){ const s=document.getElementById('speedSlider'); s.value=Math.max(1,+s.value-1); s.dispatchEvent(new Event('input')); }
+      if(e.key.toLowerCase()==='r') document.getElementById('btnReset').click();
+      if(e.key==='1') switchTab('life');
+      if(e.key==='2') switchTab('event');
+      if(e.key==='3') switchTab('tech');
+      if(e.key==='Escape') window.sim.selectedAgent=null;
+    });
+
+  }, 120);
+});
+</script>
+
+</body>
+</html>
